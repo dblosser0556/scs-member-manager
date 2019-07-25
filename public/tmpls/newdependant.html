@@ -1,0 +1,66 @@
+<tr id="rowXX" class="dependant-row">
+    <td>
+        <div style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: gray;height:30px;">
+            <div style="float:left;line-height:30px;">
+                <h5 id="header-rowXX">Dependant XX</h5>
+            </div>
+            <button style="float:right" type="button" class="close" id="removeDependant" data-row="rowXX" data-row-number="XX">&times;</button>
+        </div>
+        <div class="form-row">
+            <div class="col-md-4 mb-2">
+                <label for="firstName">First name</label>
+                <input type="text" class="form-control" data-row="rowXX" id="firstName" name="firstNameXX" placeholder="First name"
+                    required>
+                <div class="invalid-feedback">
+                    Please provide a first name.
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label for="lastName">Last name</label>
+                <input type="text" class="form-control" data-row="rowXX" id="lastName" name="lastNameXX" placeholder="Last name"
+                    required>
+                <div class="invalid-feedback">
+                    Please provide a last name.
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label for="relationship">Relationship</label>
+                <select class="form-control" id="relationship" data-row="rowXX" name="relationshipXX" placeholder="Last name" required>
+                    <option></option>
+                </select>
+                <div class="invalid-feedback">
+                    Please provide a last name.
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col-md-4 mb-2">
+                <label for="phone">Phone</label>
+                <input type="tel" class="form-control" id="phone" data-row="rowXX" name="phoneXX"
+                    pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Phone Number">
+                <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small>
+                <div class="invalid-feedback">
+                    Please provide a valid phone number.
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label for="mobile">Mobile</label>
+                <input type="tel" class="form-control" id="mobile" data-row="rowXX" name="mobileXX"
+                    pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Mobile Number">
+                <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small>
+                <div class="invalid-feedback">
+                    Please provide a valid mobile.
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" data-row="rowXX" name="emailXX" placeholder="Email">
+
+                <div class="invalid-feedback">
+                    Please provide a valid email.
+                </div>
+            </div>
+        </div>
+
+    </td>
+</tr>
