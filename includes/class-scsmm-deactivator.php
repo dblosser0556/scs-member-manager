@@ -30,14 +30,17 @@ class Scsmm_Deactivator {
 	 * @since    1.0.0
 	 */
 	public static function deactivate() {
-		global $wpdb;
+        global $wpdb;
+        
+
+       
         // dependents table
-        $table_name = $wpdb->prefix . 'scsmm_dependentlist';
+        $table_name = $wpdb->prefix . 'scsmm_dependent_list';
         $sql = "DROP TABLE IF EXISTS $table_name";
         $wpdb->query($sql);
 
-        // memberlist table
-        $table_name = $wpdb->prefix . 'scsmm_memberlist';
+        // member_list table
+        $table_name = $wpdb->prefix . 'scsmm_member_list';
         $sql = "DROP TABLE IF EXISTS $table_name";
         $wpdb->query($sql);
 
@@ -50,6 +53,12 @@ class Scsmm_Deactivator {
         $table_name = $wpdb->prefix . 'scsmm_relationship_types';
         $sql = "DROP TABLE IF EXISTS $table_name";
         $wpdb->query($sql);
+
+        // status table
+         $table_name = $wpdb->prefix . 'scsmm_status_types';
+         $sql = "DROP TABLE IF EXISTS $table_name";
+         $wpdb->query($sql);
+ 
 	}
 
 }

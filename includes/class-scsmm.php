@@ -166,11 +166,7 @@ class Scsmm
         $this->loader->add_action('wp_ajax_member_registration', $plugin_admin, 'member_registration');
         $this->loader->add_action('wp_ajax_nopriv_member_registration', $plugin_admin, 'member_registration');
 
-        // Add the ability to get relationship types and membership types to ajax
-        $this->loader->add_action('wp_ajax_membership_types', $plugin_admin, 'get_membership_types');
-        $this->loader->add_action('wp_ajax_nopriv_membership_types', $plugin_admin, 'get_membership_types');
-        $this->loader->add_action('wp_ajax_relationship_types', $plugin_admin, 'get_relationship_types');
-        $this->loader->add_action('wp_ajax_nopriv_relationship_types', $plugin_admin, 'get_relationship_types');
+       
 
         // Add menu item
         $this->loader->add_action('admin_menu', $plugin_admin, 'add_scsmm_admin_menu');

@@ -77,8 +77,6 @@ if (!isset($type)) {
     $type->name = '';
 }
 
-PC::debug($type, 'Type');
-PC::debug($type->id, 'Id');
 ?>
 <?php
   

@@ -74,7 +74,9 @@ class Scsmm_Admin {
 		 */
 
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/scsmm-admin.css', array(), $this->version, 'all' );
-		wp_enqueue_style( $this->plugin_name . '-load-bs',  plugin_dir_url( __FILE__ ) . 'css/bootstrap.min.css', array(), $this->version, 'all' );
+	
+		// include bootstrap from common directory
+		wp_enqueue_style( $this->plugin_name . '-load-bs-admin',  plugins_url( 'includes/css/bootstrap.min.css', __DIR__ ) , array(), $this->version, 'all' );
 	}
 
 	/**
@@ -97,7 +99,11 @@ class Scsmm_Admin {
 		 */
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/scsmm-admin.js', array( 'jquery' ), $this->version, false );
-		wp_enqueue_script( $this->plugin_name . "bootstrap", plugin_dir_url( __FILE__ ) . 'js/bootstrap.bundle.min.js', array( 'jquery' ), $this->version, false );
+		
+		// add the bootstrap scripts
+	
+		wp_enqueue_script( $this->plugin_name . "bootstrap-admin", plugins_url( 'includes/js/bootstrap.bundle.min.js', __DIR__ ) , array( 'jquery' ), $this->version, false );
+		
 	}
 
 
@@ -192,8 +198,7 @@ class Scsmm_Admin {
 
 	public function load_admin_membership()
 	{
-		$path = realpath(__DIR__.'/../public/partials/scsmm-public-membership.php');
-		require_once $path;
+		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-membership.php';
 	}
 
 	public function load_admin_membership_types()
@@ -226,81 +231,48 @@ class Scsmm_Admin {
 	{
 		global $wpdb;
 		return $wpdb->get_results("SELECT memberships.*, membership_types.name as type FROM 
-			{$this->getTable('memberlist')} as memberships,
+			{$this->getTable('member_list')} as memberships,
 	   		{$this->getTable('membership_types')} as membership_types
 	    	WHERE membership_types.id=memberships.membershiptypeid");
 	}
 
-	public function get_member($memberId)
-	{
-		global $wpdb;
-		return $wpdb->get_row("SELECT memberships.*, membership_types.name as type
-		FROM {$this->getTable('memberlist')} as memberships,
-	   		{$this->getTable('membership_types')} as membership_types
-	    	WHERE membership_types.id=memberships.membershiptypeid  
-				AND memberships.id = " . $memberId);
-	}
-
-	public function get_dependants($memberId)
-	{
-		global $wpdb;
-		return $wpdb->get_results("SELECT dependents.*, relationship_types.name as type FROM 
-			{$this->getTable('dependentlist')} as dependents,
-	   		{$this->getTable('relationship_types')} as relationship_types
-	    	WHERE relationship_types.id=dependents.relationshipid
-				AND dependents.membershipid = " . $memberId);
-	}
-
-
+	
 	public function delete_membership($id)
 	{
 		global $wpdb;
-		$table = $this->getTable('memberlist');
+		$table = $this->getTable('member_list');
 		return $wpdb->get_delete($table, array('id' => $id));
 	}
 
 
-public function get_relationships() {
+	public function get_relationships() {
 		global $wpdb;
 		$table_name = $this->getTable('relationship_types');
 		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
-	}
-
-	public function get_relationship_types() {
-		global $wpdb;
-		$table_name = $this->getTable('relationship_types');
-		$relationshiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
-
-		// create an options list to be passed back
-		$html="";
-		foreach($relationshiptypes as $type){
-			
-			$html .= '<option value='. $type->id .'>'.$type->name . '</option>';
-		
-		}
-		print_r($html);
-		die();
 	}
 
 
 	public function get_membership_types() {
 		global $wpdb;
 		$table_name = $this->getTable('membership_types');
-		$membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
+		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
 
-
-		print_r(json_encode($membershiptypes));
-		die();
 	}
 
 
 	public function member_registration() {
 		PC::debug(json_encode($_REQUEST));
+		global $wpdb;
 
 		$id = $_REQUEST['id'];
+		$dependantCount = $_REQUEST['dependantCount'];
 
+		$member_table = $this->getTable('member_list');
+		$dependant_table = $this->getTable('dependantlist');
+		
 		if ($id == 0 ) {
-			
+				// insert
+				
 		}
 		$results['success'] = true;
 		$results['msg'] = 'Successfully applied';

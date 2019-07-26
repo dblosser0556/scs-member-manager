@@ -74,7 +74,8 @@ class Scsmm_Public {
 		 */
 
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/scsmm-public.css', array(), date('h:i:s'), 'all' );
-		wp_enqueue_style( $this->plugin_name . '-load-bs',  plugin_dir_url( __FILE__ ) . 'css/bootstrap.min.css', array(), $this->version, 'all' );
+		// include bootstrap from common directory
+		wp_enqueue_style( $this->plugin_name . '-load-bs',  plugins_url( 'includes/css/bootstrap.min.css', __DIR__ ) , array(), $this->version, 'all' );
 	}
 
 	/**
@@ -97,33 +98,13 @@ class Scsmm_Public {
 		 */
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/scsmm-public.js', array( 'jquery' ), date('h:i:s'), false );
-		wp_enqueue_script( $this->plugin_name . "bootstrap", plugin_dir_url( __FILE__ ) . 'js/bootstrap.bundle.min.js', array( 'jquery' ), $this->version, false );
+		
+		wp_enqueue_script( $this->plugin_name . "bootstrap", plugins_url( 'includes/js/bootstrap.bundle.min.js', __DIR__ ) , array( 'jquery' ), $this->version, false );
 	}
 
 	public function public_shortcode( $atts, $content = null ) {
 		ob_start();
 		include_once( 'partials/'.$this->plugin_name.'-public-membership.php' );
 		return ob_get_clean();
-	}
-
-
-	public function get_member($memberId)
-	{
-		global $wpdb;
-		return $wpdb->get_results("SELECT memberships.*, membership_types.name as type
-		FROM {$this->getTable('memberlist')} as memberships,
-	   		{$this->getTable('membership_types')} as membership_types
-	    	WHERE membership_types.id=memberships.membershiptypeid  
-				AND memberships.id = " . $memberId);
-	}
-
-	public function get_dependants($memberId)
-	{
-		global $wpdb;
-		return $wpdb->get_results("SELECT dependents.*, relationship_types.name as type FROM 
-			{$this->getTable('dependentlist')} as dependents,
-	   		{$this->getTable('relationship_types')} as relationship_types
-	    	WHERE relationship_types.id=dependents.relationshipid
-				AND dependents.membershipid = " . $memberId);
 	}
 }
