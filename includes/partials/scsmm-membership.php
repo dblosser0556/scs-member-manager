@@ -49,20 +49,28 @@
 
 
 
-    function get_relationships() {
+    function get_relationship_types() {
 		global $wpdb;
 		$table_name = getTable('relationship_types');
 		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
     }
+
+    function get_status_types() {
+		global $wpdb;
+		$table_name = getTable('status_types');
+		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
+    }
+
     
     function get_memberships_types() {
 		global $wpdb;
-		$table_name = getTable('relationship_types');
+		$table_name = getTable('membership_types');
 		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
 	}
 
-    $relationships = get_relationships();
+    $relationshiptypes = get_relationship_types();
     $membershiptypes = get_memberships_types();
+    $statustypes = get_status_types();
 
     if (isset($_GET['memberid'])) {
         $memberid = $_GET['memberid'];
@@ -73,18 +81,22 @@
     if(!isset($member)) {
         $member = new stdClass();
         $member->id = 0;
+        $member->username = '';
         $member->firstname = '';
         $member->lastname = '';
-        $member->username = '';
         $member->address1 = '';
         $member->address2 = '';
         $member->city = '';
         $member->state = '';
         $member->zipcode = '';
-        $member->homephone = '';
+        $member->phone = '';
         $member->mobile = '';
+        $member->employer = '';
         $member->email = '';
         $member->notes = '';
+        $member->membershiptypeid = -1;
+        $member->statusid = 0;
+    
 
         $dependants = array();
     }
@@ -115,27 +127,27 @@
             </div>
         </div>
         <div class="form-row">
-            <div class="col-md-4 mb-2">
+            <div class="col-md-9 mb-4">
                 <label for="membership">Membership Type</label>
-                <select class="form-control" id="membershiptypes" data-row="row<?=$i?>" name="membershiptypes<?=$i?>"
+                <select class="form-control" id="membershiptypes" name="membershiptypes"
                      required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;">
                 <?php foreach($membershiptypes as $type) { ?>
-                    <option value="<?= $type->id ?>" <?=$member->membershipid == $type->id ? 'selected="selected"' : ''; ?> ><bold><?=$type->name?></bold> - <?=$type->description ?></option>
+                    <option value="<?= $type->id ?>" <?=$member->membershiptypeid == $type->id ? 'selected="selected"' : ''; ?> ><b><?=$type->name?></b> - <?=$type->description ?></option>
                 <?php } ?>
                 </select>
                 <div class="invalid-feedback">
                     Please provide a relationship
                 </div>
             </div>
-            <div class="form-row">
-            <div class="col-md-2 mb-2">
-                <label for="membership">Membership Status</label>
-                <select <?= $member->id == 0 ? 'style=""' : '' ?> class="form-control" id="membershipstatus" data-row="row<?=$i?>" name="membershipstatus<?=$i?>"
+        
+            <div class="col-md-3 mb-2">
+                <label for="membershipstatus">Membership Status</label>
+                <select <?= $member->id == 0 ? 'disabled' : '' ?> class="form-control" id="membershipstatus" name="membershipstatus"
                      required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;">
-                <?php foreach($membershipstatus as $type) { ?>
-                    <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == 1 ? 'selected="selected"' :  $member->statusid == $type->id ? 'selected="selected"' : ''; ?> ><bold><?=$type->name?></bold> - <?=$type->description ?></option>
+                <?php foreach($statustypes as $type) { ?>
+                    <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == 1 ? 'selected="selected"' :  $member->statusid == $type->id ? 'selected="selected"' : ''; ?> ><?=$type->name?> </option>
                 <?php } ?>
                 </select>
                 <div class="invalid-feedback">
@@ -277,7 +289,7 @@
                 <label for="phone">Phone</label>
                 <input type="tel" class="form-control" id="phone" name="phone"
                     pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Phone Number"
-                    value="<?=$member->homephone?>">
+                    value="<?=$member->phone?>">
                 <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small>
                 <div class="invalid-feedback">
                     Please provide a valid phone number.
@@ -303,6 +315,23 @@
             </div>
 
 
+        </div>
+        <div class="form-row">
+
+            <div class="col-md-3 mb-2">
+                <label for="employer">Employer</label>
+                <input type="text" class="form-control" id="employer" name="employer" placeholder="Employer"
+                    value="<?=$member->employer?>" />
+            </div>
+            <div class="col-md-9 mb-4">
+                <label for="notes">Application Notes</label>
+                <textarea class="form-control" id="notes" name="notes" aria-label="With textarea"><?=$member->notes?></textarea>
+                <small id="passwordHelpBlock" class="form-text text-muted">
+                    Please enter sponsors, clubs members you know, and other information relevant to joining our club.
+                </small>
+            </div>
+
+ 
         </div>
         <div class="form-row">
             <table class="table" id="dependantTable">
@@ -376,7 +405,7 @@ jQuery("button#mmsubmit").click(function(event) {
 
 
     var applyData = jQuery('#applyform').serialize();
-    applyDate += '&dependantCount=' + dependants;
+    applyData += '&dependantCount=' + dependants;
 
 
     jQuery.ajax({

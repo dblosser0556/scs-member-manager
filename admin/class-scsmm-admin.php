@@ -275,7 +275,7 @@ class Scsmm_Admin {
 				
 		}
 		$results['success'] = true;
-		$results['msg'] = 'Successfully applied';
+		$results['msg'] = 'Application successfully submitted. We will be back shortly.';
 		print_r(json_encode($results));
 		die();
 	}

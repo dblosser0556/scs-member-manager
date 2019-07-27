@@ -33,7 +33,7 @@
                 <select class="form-control" id="relationship" data-row="row<?=$i?>" name="relationship<?=$i?>"
                     placeholder="Last name" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;">
-                <?php foreach($relationships as $r) { ?>
+                <?php foreach($relationshiptypes as $r) { ?>
                     <option value="<?= $r->id ?>" <?= $i>0 ? $dependants[$i-1]->relationshipid == $r->id ? 'selected="selected"' : '' : ''; ?> ><?=$r->name?></option>
                 <?php } ?>
                 </select>
