@@ -47,16 +47,18 @@ $memberships = $this->get_memberships();
     </div>
     <?php
 }?>
-    <table class="table">
+    <table class="table" id="memberstable">
         <thead>
             <tr>
+                <th class="manage-column column-title column-primary"><?=__('Select', 'scsmm');?></th>
                 <th class="manage-column column-title column-primary"><?=__('Type', 'scsmm');?></th>
                 <th class="manage-column column-title column-primary"><?=__('Status', 'scsmm');?></th>
-                <th class="manage-column column-title column-primary"><?=__('FirstName', 'scsmm');?></th>
-                <th class="manage-column column-title column-primary"><?=__('LastName', 'scsmm');?></th>
+                <th class="manage-column column-title column-primary"><?=__('First Name', 'scsmm');?></th>
+                <th class="manage-column column-title column-primary"><?=__('Last Name', 'scsmm');?></th>
+                <th class="manage-column column-title column-primary"><?=__('Email', 'scsmm');?></th>
                 <th class="manage-column column-title column-primary"><?=__('Join Date', 'scsmm');?></th>
-                <th class="manage-column column-title"><?=__('Show All', 'scsmm');?></th>
-                <th class="manage-column column-title"><?=__('Action', 'scsmm');?></th>
+                <th class="manage-column column-title"><?=__('Edit', 'scsmm');?></th>
+                <th class="manage-column column-title"><?=__('Delete', 'scsmm');?></th>
             </tr>
         </thead>
         <tbody>
@@ -65,32 +67,38 @@ $i = 0;
 while ($i < sizeof($memberships)) {
     $item = $memberships[$i];?>
             <tr>
+                <td><input class="form-check-input" type="checkbox" value="" id="memberCheck"></td>
                 <td><?=$item->type?></td>
                 <td><?=$item->status?></td>
                 <td><?=$item->firstname?></td>
                 <td><?=$item->lastname?></td>
+                <td><?=$item->email?></td>
+                <td><?=date_i18n(get_option('date_format'), strtotime($item->joindate))?></td>
                 <td>
-                    <?=date_i18n(get_option('date_format'), strtotime($item->joindate))?>
+                    <a class="page-action"
+                        href="<?= admin_url("admin.php?page=scsmm-membership&memberid={$item->id}") ?>">
+                        <?= __('Edit', 'scsmm');?></a>
                 </td>
                 <td>
-                <td>
-                    <a class="page-action" href="<?= admin_url("admin.php?page=scsmm-membership&memberid={$item->id}") ?>"><?= __('Edit', 'scsmm');?></a>
-                </td>
-                <td>
-                    <form method="POST">
-                        <input type="hidden" name="id" value="<?=$item->id?>" />
-                        <a class="page_action" type="submit" name="delete"><?= __('Delete', 'scsmm');?></a>
-
-                    </form>
+                    <a class="page_action" name="delete" href=""
+                        row-data="<?=$item->id?>"><?= __('Delete', 'scsmm');?></a>
                 </td>
             </tr>
 
+
+            <?php $i++;}?>
+
         </tbody>
     </table>
-    <?php $i++;
-}?>
-
-    </tbody>
-    </table>
-    <p></p>
 </div>
+
+<script>
+jQuery('#memberstable').on('change', '#memberCheck', function(event) {
+    if (this.checked) {
+        jQuery(this).parent().parent().addClass('table-active')
+    } else {
+        jQuery(this).parent().parent().removeClass('table-active');
+    }
+
+});
+</script>

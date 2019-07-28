@@ -20,7 +20,8 @@
  * @subpackage Scsmm/admin
  * @author     David Blosser <blosserdl@gmail.com>
  */
-class Scsmm_Admin {
+class Scsmm_Admin
+{
 
 	/**
 	 * The ID of this plugin.
@@ -47,11 +48,11 @@ class Scsmm_Admin {
 	 * @param      string    $plugin_name       The name of this plugin.
 	 * @param      string    $version    The version of this plugin.
 	 */
-	public function __construct( $plugin_name, $version ) {
+	public function __construct($plugin_name, $version)
+	{
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-
 	}
 
 	/**
@@ -59,7 +60,8 @@ class Scsmm_Admin {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_styles() {
+	public function enqueue_styles()
+	{
 
 		/**
 		 * This function is provided for demonstration purposes only.
@@ -73,10 +75,10 @@ class Scsmm_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/scsmm-admin.css', array(), $this->version, 'all' );
-	
+		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/scsmm-admin.css', array(), $this->version, 'all');
+
 		// include bootstrap from common directory
-		wp_enqueue_style( $this->plugin_name . '-load-bs-admin',  plugins_url( 'includes/css/bootstrap.min.css', __DIR__ ) , array(), $this->version, 'all' );
+		wp_enqueue_style($this->plugin_name . '-load-bs-admin',  plugins_url('includes/css/bootstrap.min.css', __DIR__), array(), $this->version, 'all');
 	}
 
 	/**
@@ -84,7 +86,8 @@ class Scsmm_Admin {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_scripts()
+	{
 
 		/**
 		 * This function is provided for demonstration purposes only.
@@ -98,12 +101,11 @@ class Scsmm_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/scsmm-admin.js', array( 'jquery' ), $this->version, false );
-		
+		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/scsmm-admin.js', array('jquery'), $this->version, false);
+
 		// add the bootstrap scripts
-	
-		wp_enqueue_script( $this->plugin_name . "bootstrap-admin", plugins_url( 'includes/js/bootstrap.bundle.min.js', __DIR__ ) , array( 'jquery' ), $this->version, false );
-		
+
+		wp_enqueue_script($this->plugin_name . "bootstrap-admin", plugins_url('includes/js/bootstrap.bundle.min.js', __DIR__), array('jquery'), $this->version, false);
 	}
 
 
@@ -149,7 +151,7 @@ class Scsmm_Admin {
 			($this->plugin_name) . '-membership',
 			array($this, 'load_admin_membership')
 		);
-	
+
 
 		// Membership types list
 		add_submenu_page(
@@ -230,13 +232,16 @@ class Scsmm_Admin {
 	public function get_memberships()
 	{
 		global $wpdb;
-		return $wpdb->get_results("SELECT memberships.*, membership_types.name as type FROM 
+		return $wpdb->get_results("SELECT memberships.*, membership_types.name as type,
+			status_types.name as status FROM 
 			{$this->getTable('member_list')} as memberships,
-	   		{$this->getTable('membership_types')} as membership_types
-	    	WHERE membership_types.id=memberships.membershiptypeid");
+	   		{$this->getTable('membership_types')} as membership_types,
+			{$this->getTable('status_types')} as status_types   
+				WHERE membership_types.id=memberships.membershiptypeid AND
+					status_types.id=memberships.statusid");
 	}
 
-	
+
 	public function delete_membership($id)
 	{
 		global $wpdb;
@@ -245,39 +250,298 @@ class Scsmm_Admin {
 	}
 
 
-	public function get_relationships() {
+	public function get_relationships()
+	{
 		global $wpdb;
 		$table_name = $this->getTable('relationship_types');
 		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
 	}
 
 
-	public function get_membership_types() {
+	public function get_membership_types()
+	{
 		global $wpdb;
 		$table_name = $this->getTable('membership_types');
 		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
-
 	}
 
+	public function update_membership_type_ajax()
+	{
+		global $wpdb;
+		PC::debug($_REQUEST);
+		
+		if (
+			!isset($_REQUEST['requestType'])  ||
+			!isset($_REQUEST['name']) 
+		) {
+			return $this->handleError('Missing Data.');
+		}
 
-	public function member_registration() {
+		PC::debug('step2');
+		$table_types = $this->getTable('membership_types');
+		$requestType = $_REQUEST['requestType'];
+		if ($requestType == 'get') {
+			$id = $_REQUEST['id'];
+
+
+
+			$type = $wpdb->get_row("SELECT *
+				FROM $table_types as membership_types
+					WHERE membership_types.id= $id ");
+			$out = json_encode(array('success' => 1, 'result' => $type));
+			echo $out;
+			die;
+		}
+		// handle update request
+		if ($requestType = 'update') {
+			$count = $wpdb->update(
+				$table_types,
+				array(
+					'name' => $_REQUEST['name'],
+					'description' => $_REQUEST['description'],
+					'cost' => $_REQUEST['cost']
+				),
+				array('id' => $_REQUEST['id']),
+				array(
+					'%s',
+					'%s',
+					'%d'
+				)
+			);
+
+			if (!$count) {
+				return $this->handleError('Something went wrong.');
+			}
+
+			$results['success'] = true;
+			$results['msg'] = 'Member type successfully updated.';
+			print_r(json_encode($results));
+			die();
+		}
+
+		// handle new request
+		if ($requestType = 'create') {
+			$count = $wpdb->insert(
+				$table_types,
+				array(
+					'name' => $_REQUEST['name'],
+					'description' => $_REQUEST['description'],
+					'cost' => $_REQUEST['cost']
+				),
+				array(
+					'%s',
+					'%s',
+					'%d'
+				)
+			);
+
+			if (!$count) {
+				return $this->handleError('Something went wrong.');
+			}
+
+			$results['success'] = true;
+			$results['msg'] = 'Member type successfully created.';
+			print_r(json_encode($results));
+			die();
+		}
+	}
+
+	public function member_registration()
+	{
 		PC::debug(json_encode($_REQUEST));
 		global $wpdb;
 
-		$id = $_REQUEST['id'];
+		if (
+			!isset($_REQUEST['id']) ||
+			!isset($_REQUEST['dependantCount']) ||
+			!isset($_REQUEST['firstname']) ||
+			!isset($_REQUEST['lastname']) ||
+			!isset($_REQUEST['email']) ||
+			!isset($_REQUEST['username'])
+		) return $this->handleError('Missing Data.');
+
+		$id = (int) $_REQUEST['id'];
 		$dependantCount = $_REQUEST['dependantCount'];
 
 		$member_table = $this->getTable('member_list');
-		$dependant_table = $this->getTable('dependantlist');
-		
-		if ($id == 0 ) {
-				// insert
-				
+
+		if ($id == 0) {
+			// insert
+			$count = $wpdb->insert(
+				$member_table,
+				array(
+					'username' => $_REQUEST['username'],
+					'firstname' => $_REQUEST['firstname'],
+					'lastname' => $_REQUEST['lastname'],
+					'address1' => $_REQUEST['address1'],
+					'address2' => $_REQUEST['address2'],
+					'city' => $_REQUEST['city'],
+					'state' => $_REQUEST['state'],
+					'zipcode' => $_REQUEST['zipcode'],
+					'phone' => $_REQUEST['phone'],
+					'mobile' => $_REQUEST['mobile'],
+					'employer' => $_REQUEST['employer'],
+					'email' => $_REQUEST['email'],
+					'notes' => $_REQUEST['notes'],
+					'membershiptypeid' => (int) $_REQUEST['membershiptypeid'],
+					'statusid' => 1 // default in 1 (new) for insterted members
+				),
+				array(
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%d',
+					'%d'
+				)
+			);
+
+			if (!$count) {
+				return $this->handleError('Something went wrong.');
+			}
+
+			$membershipid = $wpdb->insert_id;
+
+			for ($i = 1; $i <= $dependantCount; $i++) {
+				$this->insertDependant($membershipid, $i);
+				// check for errors	
+				if (!$count) {
+					return $this->handleError('Something went wrong.');
+				}
+			}
+			$results['success'] = true;
+			$results['msg'] = 'Application successfully submitted. We will be back shortly.';
+			print_r(json_encode($results));
+			die();
+		} else {
+			// update
+			$count = $wpdb->update(
+				$member_table,
+				array(
+					'username' => $_REQUEST['username'],
+					'firstname' => $_REQUEST['firstname'],
+					'lastname' => $_REQUEST['lastname'],
+					'address1' => $_REQUEST['address1'],
+					'address2' => $_REQUEST['address2'],
+					'city' => $_REQUEST['city'],
+					'state' => $_REQUEST['state'],
+					'zipcode' => $_REQUEST['zipcode'],
+					'phone' => $_REQUEST['phone'],
+					'mobile' => $_REQUEST['mobile'],
+					'employer' => $_REQUEST['employer'],
+					'email' => $_REQUEST['email'],
+					'notes' => $_REQUEST['notes'],
+					'membershiptypeid' => (int) $_REQUEST['membershiptypeid'],
+					'statusid' => (int) $_REQUEST['statusid']
+				),
+				array('id' => $_REQUEST['id']),
+				array(
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%s',
+					'%d',
+					'%d'
+				)
+			);
+
+			for ($i = 1; $i <= $dependantCount; $i++) {
+				if ((int) $_REQUEST['id' . $i] > 0) {
+					$count = $this->updateDependant($membershipid, $i);
+				} else {
+					$count = $this->insertDependant($membershipid, $i);
+				}
+
+				// check for errors	
+				if (!$count) {
+					return $this->handleError('Something went wrong.');
+				}
+			}
+			$results['success'] = true;
+			$results['msg'] = 'Member details successfully updated.';
+			print_r(json_encode($results));
+			die();
 		}
-		$results['success'] = true;
-		$results['msg'] = 'Application successfully submitted. We will be back shortly.';
-		print_r(json_encode($results));
-		die();
 	}
 
+	function insertDependant($membershipid, $i)
+	{
+		global $wpdb;
+		$dependant_table = $this->getTable('dependantlist');
+
+		return $wpdb->insert(
+			$dependant_table,
+			array(
+				'firstname' => $_REQUEST['firstname' . $i],
+				'lastname' => $_REQUEST['lastname' . $i],
+				'phone' => $_REQUEST['phone' . $i],
+				'mobile' => $_REQUEST['mobile' . $i],
+				'email' => $_REQUEST['email' . $i],
+				'membershipid' => $membershipid,
+				'relationshipid' => $_REQUEST['relationshipid' . $i]
+			),
+			array(
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%d',
+				'%d'
+			)
+		);
+	}
+
+	function updateDependant($membershipid, $i)
+	{
+		global $wpdb;
+		$dependant_table = $this->getTable('dependantlist');
+
+		return $wpdb->insert(
+			$dependant_table,
+			array(
+				'firstname' => $_REQUEST['firstname' . $i],
+				'lastname' => $_REQUEST['lastname' . $i],
+				'phone' => $_REQUEST['phone' . $i],
+				'mobile' => $_REQUEST['mobile' . $i],
+				'email' => $_REQUEST['email' . $i],
+				'membershipid' => $membershipid,
+				'relationshipid' => $_REQUEST['relationshipid' . $i]
+			),
+			array('id' => $_REQUEST['id' . $i]),
+			array(
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%s',
+				'%d',
+				'%d'
+			)
+		);
+	}
+	private function handleError($msg, $code = 400)
+	{
+		status_header($code);
+		$results['success'] = false;
+		$results['msg'] = $msg;
+		echo json_encode($results);
+		die();
+	}
 }

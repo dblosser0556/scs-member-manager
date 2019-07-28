@@ -1,6 +1,7 @@
 <tr <?= $i == 0 ? 'style="display:none"' : '' ?> id="row<?=$i?>" class="dependant-row">
     <td>
-
+        <input type="text" hidden name="id<?=$i?>" data-row="row<?=$i?>" value="<?= $i>0 ? $dependants[$i-1]->id : ''?>" />
+        <input type="text" hidden name="membershipid<?=$i?>" data-row="row<?=$i?>" value="<?= $i>0 ? $dependants[$i-1]->membershipid : ''?>" />
         <div class="row" style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: gray;height:35px; 
                 overflow:auto; display: inline-block; width: 100%">
 

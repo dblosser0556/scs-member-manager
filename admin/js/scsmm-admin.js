@@ -28,7 +28,15 @@
 	 * Although scripts in the WordPress core, Plugins and Themes may be
 	 * practising this, we should strive to set a better example in our own work.
 	 */
-	$('.memberheader').click(function(){
-		$(this).nextUntil('tr.memberheader').slideToggle(1000);
-	});
+	
+    function displayAlert(msg) {
+        jQuery("#alertText").text(msg);
+        jQuery("#alert").show();
+    }
+
+    function displaySuccess(msg) {
+        jQuery("#successText").text(msg);
+        jQuery("#success").show();
+	}
+	
 })( jQuery );
