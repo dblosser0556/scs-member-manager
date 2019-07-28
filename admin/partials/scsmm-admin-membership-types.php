@@ -36,7 +36,7 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
   </div>
   <h1><?= __('Manage Membership Types', 'scsmm'); ?></h1>
 
-  <table class="table" id="membertypestable">
+  <table class="table" id="typeTable">
     <thead>
       <tr>
         <th> <?= __('Name', 'scsmm'); ?></th>
@@ -51,35 +51,20 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
         <tr>
           <td><?= $item->name ?></td>
           <td><?= $item->description ?></td>
-          <td><a id="editMember" class="page-action" href="#" data-item="<?= $item->id ?>"><?= __('Edit', 'scsmm'); ?></a></td>
-          <td><a id="deleteMember" class="page-action" href="#" data-item="<?= $item->id ?>"><?= __('Delete', 'scsmm'); ?></a></td>
+          <td><a id="editType" class="page-action" href="#" data-item="<?= $item->id ?>"><?= __('Edit', 'scsmm'); ?></a></td>
+          <td><a id="deleteType" class="page-action" href="#" data-item="<?= $item->id ?>"><?= __('Delete', 'scsmm'); ?></a></td>
         </tr>
       <?php } ?>
     </tbody>
   </table>
   <div>
-    <button type="button" class="btn btn-secondary" id="createMember" data-item="0"><?= __('Create', 'scsmm'); ?></button>
-    <nav style="float:right" aria-label="...">
-      <ul class="pagination">
-        <li class="page-item disabled">
-          <a class="page-link" href="#" tabindex="-1">Previous</a>
-        </li>
-        <li class="page-item"><a class="page-link" href="#">1</a></li>
-        <li class="page-item active">
-          <a class="page-link" href="#">2 <span class="sr-only">(current)</span></a>
-        </li>
-        <li class="page-item"><a class="page-link" href="#">3</a></li>
-        <li class="page-item">
-          <a class="page-link" href="#">Next</a>
-        </li>
-      </ul>
-    </nav>
+    <button type="button" class="btn btn-secondary" id="createType" data-item="0"><?= __('Create', 'scsmm'); ?></button>
   </div>
 </div>
 
 
 <div class="modal fade" id="typeModal" tabindex="-1" role="dialog" aria-labelledby="membertypemodal" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="memberTypeModalTitle">Edit Member Type</h5>
@@ -88,24 +73,33 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
         </button>
       </div>
       <div class="modal-body">
-        <form id="formMemberTypeModal">
-          <input type="text" hidden name="modalId" value="0" />
+        <form id="formTypeModal">
+          <input type="text" hidden id="modalId" name="id" value="0" />
           <div class="form-group row">
-            <label for="modalName" class="col-sm-2 col-form-label">Membership type</label>
+            <label for="modalName" class="col-sm-2 col-form-label">Name</label>
             <div class="col-sm-10">
-              <input type="text" class="form-control" id="modalName" placeholder="Type name">
+              <input type="text" class="form-control" id="modalName" name="name" placeholder="Input name" required>
+            </div>
+            <div class="invalid-feedback">
+                Please provide a name for the membership type.
             </div>
           </div>
           <div class="form-group row">
             <label for="modalDesc" class="col-sm-2 col-form-label">Description</label>
             <div class="col-sm-10">
-              <input type="text" class="form-control" id="modalDesc" placeholder="Description">
+              <textarea type="text" class="form-control" id="modalDesc" name="description" placeholder="Input Description"></textarea>
             </div>
           </div>
           <div class="form-group row">
             <label for="modalCost" class="col-sm-2 col-form-label">Cost</label>
-            <div class="col-sm-10">
-              <input type="text" class="form-control" id="modalCost" placeholder="Cost">
+            <div class="input-group col-sm-10">
+              <div class="input-group-prepend">
+                <span class="input-group-text">$</span>
+              </div>
+              <input type="text" class="form-control" id="modalCost" name="cost" placeholder="Input Cost">
+              <div class="input-group-append">
+                <span class="input-group-text">.00</span>
+              </div>
             </div>
           </div>
         </form>
@@ -119,10 +113,11 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
 </div>
 
 <script>
-  jQuery('#membertypestable').on('click', '#editMember', function(event) {
+  /*
+  jQuery('#typeTable').on('click', '#editMember', function(event) {
     var id = event.target.attributes['data-item'].value;
-    var typedata = 'action=membership_types_update&requestType=get&&name=blank&id=' + id;
-    jQuery.when(sendRequest(typedata)).then(function(data, textStatus, jqXHR) {
+    var typeData = 'action=membership_types_update&requestType=get&&name=blank&id=' + id;
+    jQuery.when(sendRequest(typeData)).then(function(data, textStatus, jqXHR) {
       var results = jQuery.parseJSON(data);
       if (results.success == "1") {
         jQuery('#modalId').val(results.result['id']);
@@ -136,10 +131,10 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
     });
   });
 
-  jQuery('#membertypestable').on('click', '#deleteMember', function(event) {
+  jQuery('#typeTable').on('click', '#deleteMember', function(event) {
     var id = event.target.attributes['data-item'].value;
-    var typedata = 'action=membership_types_update&requestType=delete&name="blank"&id=' + id;
-    jQuery.when(sendRequest(typedata)).then(function(data, textStatus, jqXHR) {
+    var typeData = 'action=membership_types_update&requestType=delete&name="blank"&id=' + id;
+    jQuery.when(sendRequest(typeData)).then(function(data, textStatus, jqXHR) {
       alert(jqXRH.status);
     });
 
@@ -154,7 +149,7 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
   jQuery('#saveChanges').click(function(event) {
 
 
-    var form = jQuery("#formTypes");
+    var form = jQuery("#formTypeModal");
 
     if (form[0].checkValidity() === false) {
       event.preventDefault();
@@ -165,12 +160,19 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
 
     form[0].classList.add('was-validated');
 
-    var typedata = jQuery.serialize('#formTypes');
-    typedata += '&action=membership_types_update&requestType=save&id=' + id;
+    var typeData = jQuery('#formTypeModal').serialize();
+    typeData += '&action=membership_types_update&requestType=save';
 
-    jQuery.when(sendRequest(typedata)).then(function(data, textStatus, jqXHR) {
+    jQuery.when(sendRequest(typeData)).then(function(data, textStatus, jqXHR) {
+      var results = jQuery.parseJSON(data);
+      if (results.success == "1") {
+        displaySuccess(results.msg);
+      } else {
+        displayAlert(results.msg);
+
+      }
+      // close the modal
       jQuery('#memberTypeModal').modal();
-      alert(jqXRH.status);
     });
   });
 
@@ -178,11 +180,11 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
     jQuery('#typeModal').modal();
   });
 
-  function sendRequest(typedata) {
+  function sendRequest(typeData) {
     return jQuery.ajax({
       type: "POST",
       url: '/wp-admin/admin-ajax.php',
-      data: typedata
+      data: typeData
     });
-  }
+  } */
 </script>

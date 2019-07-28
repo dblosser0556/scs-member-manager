@@ -269,20 +269,37 @@ class Scsmm_Admin
 	{
 		global $wpdb;
 		PC::debug($_REQUEST);
-		
+
 		if (
 			!isset($_REQUEST['requestType'])  ||
-			!isset($_REQUEST['name']) 
+			!isset($_REQUEST['name'])
 		) {
 			return $this->handleError('Missing Data.');
 		}
 
-		PC::debug('step2');
+
 		$table_types = $this->getTable('membership_types');
 		$requestType = $_REQUEST['requestType'];
-		if ($requestType == 'get') {
-			$id = $_REQUEST['id'];
+		$id = (int) $_REQUEST['id'];
+		if ($requestType == 'delete') {
+			$count = $wpdb->delete(
+				$table_types,
+				array('id' => $id)
 
+			);
+
+			if (!$count) {
+				return $this->handleError('Something went wrong.');
+			}
+
+			$results['success'] = true;
+			$results['msg'] = 'Type was successfully deleted.';
+			print_r(json_encode($results));
+			die();
+		}
+
+
+		if ($requestType == 'get') {
 
 
 			$type = $wpdb->get_row("SELECT *
@@ -293,7 +310,7 @@ class Scsmm_Admin
 			die;
 		}
 		// handle update request
-		if ($requestType = 'update') {
+		if ($requestType = 'save' && $id > 0) {
 			$count = $wpdb->update(
 				$table_types,
 				array(
@@ -320,7 +337,7 @@ class Scsmm_Admin
 		}
 
 		// handle new request
-		if ($requestType = 'create') {
+		if ($requestType = 'save' && $id == 0) {
 			$count = $wpdb->insert(
 				$table_types,
 				array(
