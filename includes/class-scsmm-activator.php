@@ -45,7 +45,8 @@ class Scsmm_Activator
         $sql = "CREATE TABLE $table_status_types (
 						  id mediumint NOT NULL AUTO_INCREMENT,
 						  name varchar(15) NOT NULL,
-						  action varchar(255),
+						  work_flow_action varchar(255),
+						  work_flow_order smallint NOT NULL,
 						  UNIQUE KEY id (id)
 					  ) $charset_collate;";
         dbDelta($sql);

@@ -31,14 +31,21 @@
 	$(function () {
 		$('#typeTable').on('click', '#editType', function (event) {
 			var id = event.target.attributes['data-item'].value;
-			var typeData = 'action=membership_types_update&requestType=get&&name=blank&id=' + id;
+			var tableName = event.target.attributes['data-table'].value;
+			var typeData = 'action=types_update&tableName=' + tableName + '&requestType=get&&name=blank&id=' + id;
 			$.when(sendRequest(typeData)).then(function (data, textStatus, jqXHR) {
 				var results = $.parseJSON(data);
 				if (results.success == "1") {
 					$('#modalId').val(results.result['id']);
 					$('#modalName').val(results.result['name']);
-					$('#modalDesc').val(results.result['description']);
-					$('#modalCost').val(results.result['cost']);
+					if (tableName == 'membership_types') {
+						$('#modalDesc').val(results.result['description']);
+						$('#modalCost').val(results.result['cost']);
+					}
+					if (tableName == 'status_types') {
+						$('#modalWorkFlowAction').val(results.result['work_flow_action']);
+						$('#modalWorkFlowOrder').val(results.result['work_flow_order']);
+					}
 					$('#typeModal').modal();
 				} else {
 					displayAlert(results.message);
@@ -48,11 +55,13 @@
 
 		$('#typeTable').on('click', '#deleteType', function (event) {
 			var id = event.target.attributes['data-item'].value;
-			var typeData = 'action=membership_types_update&requestType=delete&name="blank"&id=' + id;
+			var tableName = event.target.attributes['data-table'].value;
+			var typeData = 'action=types_update&tableName=' + tableName +
+				'&requestType=delete&name="blank"&id=' + id;
 			$.when(sendRequest(typeData)).then(function (data, textStatus, jqXHR) {
 				var results = $.parseJSON(data);
 				if (results.success == true) {
-					
+
 					displaySuccess(results.msg);
 				} else {
 					displayAlert(results.msg);
@@ -61,8 +70,6 @@
 				// reload the page
 				location.reload();
 			});
-
-			alert("delete " + id);
 		});
 
 		$('#createType').click(function (event) {
@@ -85,12 +92,12 @@
 			form[0].classList.add('was-validated');
 
 			var typeData = $('#formTypeModal').serialize();
-			typeData += '&action=membership_types_update&requestType=save';
+			typeData += '&action=types_update&requestType=save';
 
 			$.when(sendRequest(typeData)).then(function (data, textStatus, jqXHR) {
 				var results = $.parseJSON(data);
 				if (results.success == "1") {
-					
+
 					displaySuccess(results.msg);
 				} else {
 					displayAlert(results.msg);
@@ -131,10 +138,10 @@
 		$("#success").show();
 	}
 
-	function clearForm(form){
+	function clearForm(form) {
 		form.find(':input').not(':button, :submit, :reset, :hidden, :checkbox').val('');
 		form.find('#modalId').val(0);
 		form.removeClass('was-validated');
 	}
 
-})($);
+})(jQuery);

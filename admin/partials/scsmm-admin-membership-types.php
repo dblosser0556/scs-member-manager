@@ -34,13 +34,14 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
     <button id="successClose" type="button" class="close">&times;</button>
     <span id="successText">Something went right.</span>
   </div>
-  <h1><?= __('Manage Membership Types', 'scsmm'); ?></h1>
+  <h3><?= __('Manage Membership Types', 'scsmm'); ?></h3>
 
   <table class="table" id="typeTable">
     <thead>
       <tr>
         <th> <?= __('Name', 'scsmm'); ?></th>
         <th><?= __('Description', 'scsmm'); ?></th>
+        <th><?= __('Cost', 'scsmm'); ?></th>
         <th><?= __('Edit', 'scsmm'); ?></th>
         <th><?= __('Delete', 'scsmm'); ?></th>
       </tr>
@@ -51,8 +52,9 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
         <tr>
           <td><?= $item->name ?></td>
           <td><?= $item->description ?></td>
-          <td><a id="editType" class="page-action" href="#" data-item="<?= $item->id ?>"><?= __('Edit', 'scsmm'); ?></a></td>
-          <td><a id="deleteType" class="page-action" href="#" data-item="<?= $item->id ?>"><?= __('Delete', 'scsmm'); ?></a></td>
+          <td><?= $item->cost ?></td>
+          <td><a id="editType" class="page-action" href="#" data-table="membership_types" data-item="<?= $item->id ?>"><?= __('Edit', 'scsmm'); ?></a></td>
+          <td><a id="deleteType" class="page-action" href="#" data-table="membership_types" data-item="<?= $item->id ?>"><?= __('Delete', 'scsmm'); ?></a></td>
         </tr>
       <?php } ?>
     </tbody>
@@ -75,6 +77,7 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
       <div class="modal-body">
         <form id="formTypeModal">
           <input type="text" hidden id="modalId" name="id" value="0" />
+          <input type="text" hidden id="modalTable" name="tableName" value="relationship_types" />
           <div class="form-group row">
             <label for="modalName" class="col-sm-2 col-form-label">Name</label>
             <div class="col-sm-10">
@@ -111,80 +114,3 @@ $membershiptypes = $wpdb->get_results("SELECT * FROM $table_name ORDER BY name")
     </div>
   </div>
 </div>
-
-<script>
-  /*
-  jQuery('#typeTable').on('click', '#editMember', function(event) {
-    var id = event.target.attributes['data-item'].value;
-    var typeData = 'action=membership_types_update&requestType=get&&name=blank&id=' + id;
-    jQuery.when(sendRequest(typeData)).then(function(data, textStatus, jqXHR) {
-      var results = jQuery.parseJSON(data);
-      if (results.success == "1") {
-        jQuery('#modalId').val(results.result['id']);
-        jQuery('#modalName').val(results.result['name']);
-        jQuery('#modalDesc').val(results.result['description']);
-        jQuery('#modalCost').val(results.result['cost']);
-        jQuery('#typeModal').modal();
-      } else {
-        displayAlert(results.message);
-      };
-    });
-  });
-
-  jQuery('#typeTable').on('click', '#deleteMember', function(event) {
-    var id = event.target.attributes['data-item'].value;
-    var typeData = 'action=membership_types_update&requestType=delete&name="blank"&id=' + id;
-    jQuery.when(sendRequest(typeData)).then(function(data, textStatus, jqXHR) {
-      alert(jqXRH.status);
-    });
-
-    alert("delete " + id);
-  });
-
-  jQuery('#createMember').click(function(event) {
-    jQuery('#typeModal').modal();
-  });
-
-  // handle the save changes button on the modal
-  jQuery('#saveChanges').click(function(event) {
-
-
-    var form = jQuery("#formTypeModal");
-
-    if (form[0].checkValidity() === false) {
-      event.preventDefault();
-      event.stopPropagation();
-      form[0].classList.add('was-validated');
-      return;
-    }
-
-    form[0].classList.add('was-validated');
-
-    var typeData = jQuery('#formTypeModal').serialize();
-    typeData += '&action=membership_types_update&requestType=save';
-
-    jQuery.when(sendRequest(typeData)).then(function(data, textStatus, jqXHR) {
-      var results = jQuery.parseJSON(data);
-      if (results.success == "1") {
-        displaySuccess(results.msg);
-      } else {
-        displayAlert(results.msg);
-
-      }
-      // close the modal
-      jQuery('#memberTypeModal').modal();
-    });
-  });
-
-  jQuery('#closeModal').click(function(event) {
-    jQuery('#typeModal').modal();
-  });
-
-  function sendRequest(typeData) {
-    return jQuery.ajax({
-      type: "POST",
-      url: '/wp-admin/admin-ajax.php',
-      data: typeData
-    });
-  } */
-</script>

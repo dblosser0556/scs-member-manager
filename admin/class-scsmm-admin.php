@@ -265,22 +265,24 @@ class Scsmm_Admin
 		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
 	}
 
-	public function update_membership_type_ajax()
+	public function update_type_ajax()
 	{
 		global $wpdb;
 		PC::debug($_REQUEST);
 
 		if (
 			!isset($_REQUEST['requestType'])  ||
-			!isset($_REQUEST['name'])
+			!isset($_REQUEST['name']) ||
+			!isset($_REQUEST['tableName'])
 		) {
 			return $this->handleError('Missing Data.');
 		}
 
-
-		$table_types = $this->getTable('membership_types');
+		$tableName = $_REQUEST['tableName'];
 		$requestType = $_REQUEST['requestType'];
 		$id = (int) $_REQUEST['id'];
+
+		$table_types = $this->getTable($_REQUEST['tableName']);
 		if ($requestType == 'delete') {
 			$count = $wpdb->delete(
 				$table_types,
@@ -303,27 +305,55 @@ class Scsmm_Admin
 
 
 			$type = $wpdb->get_row("SELECT *
-				FROM $table_types as membership_types
-					WHERE membership_types.id= $id ");
+				FROM $table_types as types
+					WHERE types.id= $id ");
 			$out = json_encode(array('success' => 1, 'result' => $type));
 			echo $out;
 			die;
 		}
-		// handle update request
-		if ($requestType = 'save' && $id > 0) {
-			$count = $wpdb->update(
-				$table_types,
-				array(
+
+		if ($requestType == 'save') {
+			if ($tableName == 'membership_types'){
+				$inputArray = array(
 					'name' => $_REQUEST['name'],
 					'description' => $_REQUEST['description'],
 					'cost' => $_REQUEST['cost']
-				),
-				array('id' => $_REQUEST['id']),
-				array(
+				);
+				$typeArray = array(
 					'%s',
 					'%s',
 					'%d'
-				)
+				);
+			
+			} elseif ($tableName == 'relationship_types'){
+				$inputArray = array(
+					'name' => $_REQUEST['name']
+				);
+				$typeArray = array(
+					'%s',
+				);
+			} elseif ($tableName == 'status_types'){
+				$inputArray = array(
+					'name' => $_REQUEST['name'],
+					'work_flow_action' => $_REQUEST['work_flow_action'],
+					'work_flow_order' => $_REQUEST['work_flow_order']
+				);
+				$typeArray = array(
+					'%s',
+					'%s',
+					'%d'
+				);
+			}
+		}
+		// handle update request
+		if ($requestType == 'save' && $id > 0) {
+		
+			
+			$count = $wpdb->update(
+				$table_types,
+				$inputArray,
+				array('id' => $_REQUEST['id']),
+				$typeArray
 			);
 
 			if (!$count) {
@@ -331,7 +361,7 @@ class Scsmm_Admin
 			}
 
 			$results['success'] = true;
-			$results['msg'] = 'Member type successfully updated.';
+			$results['msg'] = 'Type successfully updated.';
 			print_r(json_encode($results));
 			die();
 		}
@@ -340,16 +370,8 @@ class Scsmm_Admin
 		if ($requestType = 'save' && $id == 0) {
 			$count = $wpdb->insert(
 				$table_types,
-				array(
-					'name' => $_REQUEST['name'],
-					'description' => $_REQUEST['description'],
-					'cost' => $_REQUEST['cost']
-				),
-				array(
-					'%s',
-					'%s',
-					'%d'
-				)
+				$inputArray,
+				$typeArray
 			);
 
 			if (!$count) {
@@ -357,7 +379,7 @@ class Scsmm_Admin
 			}
 
 			$results['success'] = true;
-			$results['msg'] = 'Member type successfully created.';
+			$results['msg'] = 'Type successfully created.';
 			print_r(json_encode($results));
 			die();
 		}
