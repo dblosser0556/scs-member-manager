@@ -102,9 +102,16 @@ class Scsmm_Public {
 		wp_enqueue_script( $this->plugin_name . "bootstrap", plugins_url( 'includes/js/bootstrap.bundle.min.js', __DIR__ ) , array( 'jquery' ), $this->version, false );
 	}
 
-	public function public_shortcode( $atts, $content = null ) {
+	
+	public function apply_shortcode( $atts, $content = null ) {
 		ob_start();
 		include_once( 'partials/'.$this->plugin_name.'-public-membership.php' );
+		return ob_get_clean();
+	}
+
+	public function contact_shortcode( $atts, $content = null ) {
+		ob_start();
+		include_once( 'partials/'.$this->plugin_name.'-public-contact.php' );
 		return ob_get_clean();
 	}
 }

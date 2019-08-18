@@ -70,10 +70,18 @@ function get_memberships_types()
     $table_name = getTable('membership_types');
     return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
 }
+function get_status_new() 
+{
+    global $wpdb;
+    $table_name = getTable('status_types');
+    $_status = $wpdb->get_row("SELECT * FROM $table_name WHERE name='NEW'");
+    return $_status->id;
+}
 
 $relationshiptypes = get_relationship_types();
 $membershiptypes = get_memberships_types();
 $statustypes = get_status_types();
+$statusnew = get_status_new();
 
 if (isset($_GET['memberid'])) {
     $memberid = $_GET['memberid'];
@@ -104,6 +112,9 @@ if (!isset($member)) {
     $dependants = array();
 }
 
+//Set Your Nonce
+$ajax_nonce = wp_create_nonce( "scs-member-check-string" );
+
 ?>
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
@@ -121,7 +132,7 @@ if (!isset($member)) {
 <div class="container">
 
     <form id="applyform" class="needs-validation" novalidate>
-        <input type="text" hidden name="action" value="member_registration" />
+        <input type="text" hidden name="action" value="member_application" />
         <input type="text" hidden name="id" value="<?= $member->id ?>" />
         <div class="form-row" style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: gray;height:30px;">
             <div style="float:left;line-height:30px;">
@@ -144,10 +155,10 @@ if (!isset($member)) {
 
             <div class="col-md-3 mb-2">
                 <label for="statusid">Membership Status</label>
-                <select <?= $member->id == 0 ? 'disabled' : '' ?> class="form-control" id="statusid" name="statusid" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
+                <select <?= $member->id == 0 ? 'readonly' : '' ?> class="form-control" id="statusid" name="statusid" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;">
                     <?php foreach ($statustypes as $type) { ?>
-                        <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == 1 ? 'selected="selected"' : $member->statusid == $type->id ? 'selected="selected"' : ''; ?>><?= $type->name ?> </option>
+                        <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == $statusnew ? 'selected="selected"' : $member->statusid == $type->id ? 'selected="selected"' : ''; ?>><?= $type->name ?> </option>
                     <?php } ?>
                 </select>
                 <div class="invalid-feedback">
@@ -211,6 +222,7 @@ if (!isset($member)) {
                 <label for="state">State</label>
                 <select class="form-control" id="state" name="state" placeholder="State" style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;" required>
+                    <option value="">--Please Select--</option>
                     <option <?php if ($member->state == "AL") echo 'selected'; ?> value="AL">Alabama</option>
                     <option <?php if ($member->state == "AK") echo 'selected'; ?> value="AK">Alaska</option>
                     <option <?php if ($member->state == "AZ") echo 'selected'; ?> value="AZ">Arizona</option>
@@ -392,7 +404,7 @@ if (!isset($member)) {
 
         var applyData = jQuery('#applyform').serialize();
         applyData += '&dependantCount=' + dependants;
-
+        applyData += '&security=' + '<?= $ajax_nonce; ?>';
 
         jQuery.ajax({
             type: "POST",
