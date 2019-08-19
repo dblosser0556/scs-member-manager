@@ -239,7 +239,7 @@ class Scsmm_Admin
 	{ 
 		$this->member_list_table->prepare_items();
 		
-		include_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-member-list.php';
+		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-member-list.php';
 	
 	}
 
@@ -252,11 +252,10 @@ class Scsmm_Admin
 		);
 
 		add_screen_option( 'per_page', $arguments); 
-
-		
-		include_once plugin_dir_path(__FILE__) . 'class-membership-list.php';
-		$memberships = $this->get_memberships();
-		$this->member_list_table = new Member_List_Table($this->plugin_name, $memberships);
+		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/libraries/class-wp-list-table.php';
+		require_once plugin_dir_path(__FILE__) . 'class-membership-list.php';
+		//$memberships = $this->get_memberships();
+		$this->member_list_table = new Member_List_Table($this->plugin_name);
 	}
 
 	private function getTable($table)
