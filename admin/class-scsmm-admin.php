@@ -37,7 +37,7 @@ class Scsmm_Admin
 	 * used to render the list of members
 	 */
 	private $member_list_table;
-	
+
 	/**
 	 * Initialize the class and set its properties.
 	 *
@@ -51,6 +51,9 @@ class Scsmm_Admin
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
+
+		// add the callback for the save screen options for the member list page
+		add_filter('set-screen-option', array($this, 'save_member_list_table_screen_options'), 10, 3);
 	}
 
 	/**
@@ -76,7 +79,7 @@ class Scsmm_Admin
 		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/scsmm-admin.css', array(), $this->version, 'all');
 
 		// include bootstrap from common directory
-		wp_enqueue_style($this->plugin_name . '-load-bs-admin',  plugins_url('includes/css/bootstrap.min.css', __DIR__), array(), $this->version, 'all');
+		//wp_enqueue_style($this->plugin_name . '-load-bs-admin',  plugins_url('includes/css/bootstrap.min.css', __DIR__), array(), $this->version, 'all');
 	}
 
 	/**
@@ -103,7 +106,7 @@ class Scsmm_Admin
 
 		// add the bootstrap scripts
 
-		wp_enqueue_script($this->plugin_name . "bootstrap-admin", plugins_url('includes/js/bootstrap.bundle.min.js', __DIR__), array('jquery'), $this->version, false);
+		//wp_enqueue_script($this->plugin_name . "bootstrap-admin", plugins_url('includes/js/bootstrap.bundle.min.js', __DIR__), array('jquery'), $this->version, false);
 	}
 
 
@@ -183,13 +186,24 @@ class Scsmm_Admin
 		);
 
 		// a status types list
-		add_submenu_page(
+		$page_hook = add_submenu_page(
 			$this->plugin_name,
 			'Member Manager Settings Setup',
 			__('Settings', 'scsmm'),
 			'manage_options',
 			($this->plugin_name) . '-settings',
 			array($this, 'load_admin_settings')
+		);
+		add_action('load-' . $page_hook, array($this, 'load_membership_types_list_table_screen_options'));
+		
+		// a email types list
+		add_submenu_page(
+			$this->plugin_name,
+			'Email Member',
+			__('Email', 'scsmm'),
+			'manage_options',
+			($this->plugin_name) . '-email',
+			array($this, 'load_admin_email_page')
 		);
 
 		$page_hook = add_submenu_page(
@@ -206,6 +220,7 @@ class Scsmm_Admin
 
 	public function load_admin_settings()
 	{
+		$this->membership_type_list_table->prepare_items();
 		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-settings.php';
 	}
 
@@ -235,28 +250,64 @@ class Scsmm_Admin
 		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-status-types.php';
 	}
 
-	public function load_member_list_table()
-	{ 
-		$this->member_list_table->prepare_items();
-		
-		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-member-list.php';
-	
+	public function load_admin_email_page()
+	{
+		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-email.php';
 	}
 
+	public function load_member_list_table()
+	{
+		$this->member_list_table->prepare_items();
+
+		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-member-list.php';
+	}
+
+	/*
+	 *
+	 * Set up the screen options for the member-list
+	 * 
+	 */
 	public function load_member_list_table_screen_options()
 	{
 		$arguments = array(
 			'label' 	=> __('Members Per Page', $this->plugin_name),
 			'default'	=> 5,
-			'options' 	=> 'members_per_page'
+			'option' 	=> 'members_per_page'
 		);
 
-		add_screen_option( 'per_page', $arguments); 
+		add_screen_option('per_page', $arguments);
 		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/libraries/class-wp-list-table.php';
-		require_once plugin_dir_path(__FILE__) . 'class-membership-list.php';
-		//$memberships = $this->get_memberships();
+		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-scsmm-membership-list.php';
 		$this->member_list_table = new Member_List_Table($this->plugin_name);
 	}
+
+	public function load_membership_types_list_table_screen_options() {
+		$arguments = array(
+			'label' 	=> __('Types Per Page', $this->plugin_name),
+			'default'	=> 5,
+			'option' 	=> 'membership_types_per_page'
+		);
+
+		add_screen_option('per_page', $arguments);
+		require_once PLUGIN_DIR . 'includes/libraries/class-wp-list-table.php';
+		require_once PLUGIN_DIR . 'includes/class-scsmm-membership-type-list.php';
+
+        $this->membership_type_list_table = new Membership_Type_List_Table($this->plugin_name);
+	}
+
+	/**
+	 * Save the screen option setting.
+	 *
+	 * @param string $status The default value for the filter. Using anything other than false assumes you are handling saving the option.
+	 * @param string $option The option name.
+	 * @param array  $value  Whatever option you're setting.
+	 */
+	public function save_member_list_table_screen_options($status, $option, $value)
+	{
+		if ('members_per_page' == $option) return $value;
+		return $status;
+	}
+
 
 	private function getTable($table)
 	{
@@ -300,10 +351,6 @@ class Scsmm_Admin
 		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
 	}
 
-	function scsmm_get_application_redirect()
-	{
-		return 'page_id=182';
-	}
 
 	public function update_type_ajax()
 	{
@@ -457,6 +504,7 @@ class Scsmm_Admin
 		$member_table = $this->getTable('member_list');
 
 		if ($id == 0) {
+			$joindate = date(DATE_ATOM);
 			// insert
 			$count = $wpdb->insert(
 				$member_table,
@@ -475,7 +523,8 @@ class Scsmm_Admin
 					'email' => $email,
 					'notes' => $notes,
 					'membershiptypeid' => (int) $_REQUEST['membershiptypeid'],
-					'statusid' => (int) $_REQUEST['statusid'] // default in 1 (new) for insterted members
+					'statusid' => (int) $_REQUEST['statusid'],
+					'joindate' => sanitize_text_field($_REQUEST['joindate'])
 				),
 				array(
 					'%s',
@@ -491,7 +540,8 @@ class Scsmm_Admin
 					'%s',
 					'%s',
 					'%d',
-					'%d'
+					'%d',
+					'%s'
 				)
 			);
 
@@ -503,7 +553,7 @@ class Scsmm_Admin
 			$membershipid = $wpdb->insert_id;
 
 			for ($i = 1; $i <= $dependantCount; $i++) {
-				$this->insertDependant($membershipid, $i);
+				$count = $this->insertDependant($membershipid, $i);
 				// check for errors	
 				if (!$count) {
 					return $this->handleError('Something went wrong.');
@@ -535,14 +585,6 @@ class Scsmm_Admin
 			print_r(json_encode($results));
 
 
-			if (!empty($this->scsmm_get_application_redirect())) {
-				$redirect = $this->scsmm_get_application_redirect();
-			}
-
-
-			wp_safe_redirect($redirect);
-
-
 
 			die();
 		} else {
@@ -564,7 +606,8 @@ class Scsmm_Admin
 					'email' => $_REQUEST['email'],
 					'notes' => $_REQUEST['notes'],
 					'membershiptypeid' => (int) $_REQUEST['membershiptypeid'],
-					'statusid' => (int) $_REQUEST['statusid']
+					'statusid' => (int) $_REQUEST['statusid'],
+					'joindate' => (int) $_REQUEST['joindate']
 				),
 				array('id' => $_REQUEST['id']),
 				array(
@@ -581,7 +624,8 @@ class Scsmm_Admin
 					'%s',
 					'%s',
 					'%d',
-					'%d'
+					'%d',
+					'%s'
 				)
 			);
 
@@ -607,9 +651,9 @@ class Scsmm_Admin
 	function insertDependant($membershipid, $i)
 	{
 		global $wpdb;
-		$dependant_table = $this->getTable('dependantlist');
+		$dependant_table = $this->getTable('dependent_list');
 
-		return $wpdb->insert(
+		$count =  $wpdb->insert(
 			$dependant_table,
 			array(
 				'firstname' => $_REQUEST['firstname' . $i],
@@ -630,6 +674,8 @@ class Scsmm_Admin
 				'%d'
 			)
 		);
+
+		return $count;
 	}
 
 	function updateDependant($membershipid, $i)

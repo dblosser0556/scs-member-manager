@@ -1,11 +1,7 @@
 <?php
 
 
-if (!class_exists('SCSWP_List_Table')) {
-    //require_once( ABSPATH . 'wp-admin/includes/screen.php' );
-    //require_once( ABSPATH . 'wp-admin/includes/class-wp-list-table.php' );
-    require_once(plugin_dir_path(dirname(__FILE__)) . 'includes/libraries/class-membership-list.php');
-}
+
 
 
 class Member_List_Table extends SCSWP_List_Table
@@ -24,20 +20,44 @@ class Member_List_Table extends SCSWP_List_Table
             'singular'    =>    'member',        // Singular label for an object being listed, e.g. 'post'.
             'ajax'        =>    false,        // If true, the parent class will call the _js_vars() method in the footer		
         ));
+
+        add_action('admin_head', array($this, 'admin_header'));
+    }
+
+    public function admin_header()
+    {
+        // ensure we are on the correct page
+        $page = (isset($_GET['page'])) ? esc_attr($_GET['page']) : false;
+        if ($this->plugin_name . '-member-list' != $page)
+            return;
+
+        // set up column widths
+        echo '<style type="text/css">';
+        echo '.wp-list-table .column-cb { width: 5%; }';
+        echo '.wp-list-table .column-membername { width: 30%; }';
+        echo '.wp-list-table .column-type { width: 10%; }';
+        echo '.wp-list-table .column-status { width: 10%; }';
+        echo '.wp-list-table .column-email { width: 15%; }';
+        echo '.wp-list-table .column-phone { width: 10%;}';
+        echo '.wp-list-table .column-id { width: 5%;}';
+        echo '.wp-list-table .column-joindate { width: 15%;}';
+        echo '</style>';
     }
 
     public function get_columns()
     {
         $table_columns = array(
             'cb'        => '<input type = "checkbox" />',
+            'membername' => __('Name', 'scsmm'),
             'type'      => __('Type', 'scsmm'),
             'status'    => __('Status', 'scsmm'),
-            'membername' => __('Name', 'scsmm'),
             'email'     => __('Email', 'scsmm'),
             'phone'     => __('Phone', 'scsmm'),
+            'id'        => __('Id' , 'scsmm'),
             'joindate'  => __('Join Date', 'scsmm')
         );
         return $table_columns;
+        
     }
 
     public function no_items()
@@ -123,6 +143,11 @@ class Member_List_Table extends SCSWP_List_Table
 
         $row_value = '<strong>' . $item['membername'] . '</strong>';
         return $row_value . $this->row_actions($actions);
+    }
+
+    public function column_joindate($item)
+    {
+        return date('Y-m-d', strtotime($item['joindate']));
     }
 
     public function column_default($item, $column_name)
@@ -263,20 +288,33 @@ class Member_List_Table extends SCSWP_List_Table
              * Note: the nonce field is set by the parent class
              * wp_nonce_field( 'bulk-' . $this->_args['plural'] );	 
              */
-            if (!wp_verify_nonce($nonce, 'bulk-users')) { // verify the nonce.
+            if (!wp_verify_nonce($nonce, 'bulk-members')) { // verify the nonce.
                 $this->invalid_nonce_redirect();
             } else {
-                //include_once('views/partials-wp-list-table-demo-bulk-download.php');
-                //
+                $this->page_download_members($_REQUEST['members']);
                 $this->graceful_exit();
             }
         }
         if ((isset($_REQUEST['action']) && $_REQUEST['action'] === 'delete') || (isset($_REQUEST['action2']) && $_REQUEST['action2'] === 'delete')) {
+            $nonce = wp_unslash($_REQUEST['_wpnonce']);
+            if (!wp_verify_nonce($nonce, 'bulk-members')) { // verify the nonce.
+                $this->invalid_nonce_redirect();
+            } else {
+                $this->page_delete_members($_REQUEST['members']);
+                $this->graceful_exit();
+            }
             /*todo - handle delete action 
-        */ }
+        */
+        }
         if ((isset($_REQUEST['action']) && $_REQUEST['action'] === 'email') || (isset($_REQUEST['action2']) && $_REQUEST['action2'] === 'email')) {
-            /*todo - create email page 
-        */ }
+            $nonce = wp_unslash($_REQUEST['_wpnonce']);
+            if (!wp_verify_nonce($nonce, 'bulk-members')) { // verify the nonce.
+                $this->invalid_nonce_redirect();
+            } else {
+                $this->page_email_members($_REQUEST['members']);
+                $this->graceful_exit();
+            }
+        }
     }
 
     /**
@@ -288,12 +326,56 @@ class Member_List_Table extends SCSWP_List_Table
      */
     public function page_edit_member()
     {
-     
+
         $file = plugin_dir_path(dirname(__FILE__)) . 'includes/partials/scsmm-membership.php';
         include_once($file);
     }
 
+    public function page_email_members($memberids)
+    {
+        global $wpdb;
 
+        $ids = "";
+        foreach ($memberids as $id) {
+            if ($ids == '') $ids = $id;
+            else $ids .=  ',' . $id;
+        }
+        $sql = "SELECT memberships.email FROM 
+            {$this->getTable('member_list')} as memberships
+        WHERE id in (" . $ids . ") ";
+
+        $members = $wpdb->get_results($sql);
+
+        $to = "";
+        foreach( $members as $member) {
+            if ($to == "") $to = $member->email;
+            else $to .= "," . $member->email;
+        }
+
+        if (!session_id()) {
+            session_start();
+        }
+       
+        $_SESSION["to-email"] = $to;
+        $_SESSION["from-page"] = add_query_arg(array('page' => $this->plugin_name . "-member-list"), admin_url('admin.php'));
+        
+        // open to 
+        $url = add_query_arg(array('page' => $this->plugin_name . "-email"), admin_url('admin.php'));
+        wp_safe_redirect($url);
+
+    }
+
+    public function page_download_members($memberids)
+    {
+
+        //todo
+    }
+
+    public function page_delete_members($memberids)
+    {
+
+        //todo
+    }
 
     /**
      * Stop execution and exit

@@ -25,9 +25,19 @@ if (!current_user_can('manage_options')) {
 <div class="wrap">
     <h2><?php echo esc_html(get_admin_page_title()); ?></h2>
 
+    <?php
+    $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'redirect_options';
+    ?>
+
+    <h2 class="nav-tab-wrapper">
+        <a href="?page=scsmm-settings&tab=redirect_options" class="nav-tab <?php echo $active_tab == 'redirect_options' ? 'nav-tab-active' : ''; ?>">Redirect Options</a>
+        <a href="?page=scsmm-settings&tab=types_options" class="nav-tab <?php echo $active_tab == 'types_options' ? 'nav-tab-active' : ''; ?>">Type Options</a>
+    </h2>
+    <?php
+    if ($active_tab == 'redirect_options') { ?>
     <form action="options.php" name="member-manager-options" method="post">
-        <?php settings_fields( $this->plugin_name ); ?>
-        <?php 
+        <?php settings_fields($this->plugin_name); ?>
+        <?php
             // grab all the options to set save values
             $settings = get_option($this->plugin_name);
 
@@ -37,7 +47,7 @@ if (!current_user_can('manage_options')) {
             $applicationpage = $settings['application-page'];
             $applicationredirect = $settings['application-redirect-page'];
 
-        ?>
+            ?>
         <table class="form-table">
             <tbody>
                 <!-- Member Manager Email -->
@@ -46,7 +56,7 @@ if (!current_user_can('manage_options')) {
                         <label for="<?php echo $this->plugin_name; ?>-email"><?= esc_html__("Member Manager Email", $this->plugin_name) ?></label>
                     </th>
                     <td>
-                        <input type="email" name="<?php echo $this->plugin_name; ?>[email]" id="<?php echo $this->plugin_name; ?>-email" value="<?php if(!empty($email)) echo $email; ?>">
+                        <input type="email" name="<?php echo $this->plugin_name; ?>[email]" id="<?php echo $this->plugin_name; ?>-email" value="<?php if (!empty($email)) echo $email; ?>">
                     </td>
                 </tr>
                 <!-- Contact Page -->
@@ -59,14 +69,14 @@ if (!current_user_can('manage_options')) {
                             <option value="">
                                 <?php echo esc_attr(__('Select page')); ?></option>
                             <?php
-                            $pages = get_pages();
-                            foreach ($pages as $page) {
-                                $option = '<option value="' . get_page_link($page->ID) . '"' . selected($contactpage, get_page_link($page->ID))  . '>';
-                                $option .= $page->post_title;
-                                $option .= '</option>';
-                                echo $option;
-                            }
-                            ?>
+                                $pages = get_pages();
+                                foreach ($pages as $page) {
+                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($contactpage, get_page_link($page->ID))  . '>';
+                                    $option .= $page->post_title;
+                                    $option .= '</option>';
+                                    echo $option;
+                                }
+                                ?>
                         </select>
                     </td>
                 </tr>
@@ -80,14 +90,14 @@ if (!current_user_can('manage_options')) {
                             <option value="">
                                 <?php echo esc_attr(__('Select page')); ?></option>
                             <?php
-                            $pages = get_pages();
-                            foreach ($pages as $page) {
-                                $option = '<option value="' . get_page_link($page->ID) . '"' . selected($contactredirect, get_page_link($page->ID))  . '>';
-                                $option .= $page->post_title;
-                                $option .= '</option>';
-                                echo $option;
-                            }
-                            ?>
+                                $pages = get_pages();
+                                foreach ($pages as $page) {
+                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($contactredirect, get_page_link($page->ID))  . '>';
+                                    $option .= $page->post_title;
+                                    $option .= '</option>';
+                                    echo $option;
+                                }
+                                ?>
                         </select>
                     </td>
                 </tr>
@@ -102,14 +112,14 @@ if (!current_user_can('manage_options')) {
                             <option value="">
                                 <?php echo esc_attr(__('Select page')); ?></option>
                             <?php
-                            $pages = get_pages();
-                            foreach ($pages as $page) {
-                                $option = '<option value="' . get_page_link($page->ID) . '"' . selected($applicationpage, get_page_link($page->ID))  . '>';
-                                $option .= $page->post_title;
-                                $option .= '</option>';
-                                echo $option;
-                            }
-                            ?>
+                                $pages = get_pages();
+                                foreach ($pages as $page) {
+                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($applicationpage, get_page_link($page->ID))  . '>';
+                                    $option .= $page->post_title;
+                                    $option .= '</option>';
+                                    echo $option;
+                                }
+                                ?>
                         </select>
                     </td>
                 </tr>
@@ -123,14 +133,14 @@ if (!current_user_can('manage_options')) {
                             <option value="">
                                 <?php echo esc_attr(__('Select page')); ?></option>
                             <?php
-                            $pages = get_pages();
-                            foreach ($pages as $page) {
-                                $option = '<option value="' . get_page_link($page->ID) . '"' . selected($applicationredirect, get_page_link($page->ID))  . '>';
-                                $option .= $page->post_title;
-                                $option .= '</option>';
-                                echo $option;
-                            }
-                            ?>
+                                $pages = get_pages();
+                                foreach ($pages as $page) {
+                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($applicationredirect, get_page_link($page->ID))  . '>';
+                                    $option .= $page->post_title;
+                                    $option .= '</option>';
+                                    echo $option;
+                                }
+                                ?>
                         </select>
                     </td>
                 </tr>
@@ -142,4 +152,7 @@ if (!current_user_can('manage_options')) {
         </table>
         <p class="submit"><input type="submit" value="Save Changes" class="button-primary" name="Submit"></p>
     </form>
+    <?php } else if ($active_tab == 'types_options') { 
+        require_once PLUGIN_DIR . 'admin/partials/scsmm-admin-membership-type-list.php';
+    }  ?>
 </div>

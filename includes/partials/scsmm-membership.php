@@ -70,7 +70,7 @@ function get_memberships_types()
     $table_name = getTable('membership_types');
     return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
 }
-function get_status_new() 
+function get_status_new()
 {
     global $wpdb;
     $table_name = getTable('status_types');
@@ -78,16 +78,49 @@ function get_status_new()
     return $_status->id;
 }
 
+function get_success_redirect()
+{
+    $options = get_option('scsmm');
+    if (isset($options['application-redirect-page'])) {
+        return $options['application-redirect-page'];
+    }
+    //todo: handle not set option
+    return null;
+}
+
+
+
 $relationshiptypes = get_relationship_types();
 $membershiptypes = get_memberships_types();
 $statustypes = get_status_types();
 $statusnew = get_status_new();
+$redirect = get_success_redirect();
 
 if (isset($_GET['memberid'])) {
     $memberid = $_GET['memberid'];
     $member = get_member($memberid);
     $dependants = get_dependants($memberid);
 }
+
+// handle the viewing and update options
+// from the admin screen
+if (isset($_GET['action'])) {
+    if ($_GET['action'] == 'view_member') {
+        $readonly = true;
+        $canupdate = false;
+        $back = true;
+    } else {
+        $readonly = false;
+        $canupdate = true;
+        $back = true;
+    }
+} else {
+    $readonly = false;
+    $canupdate = true;
+    $back = false;
+}
+
+
 
 if (!isset($member)) {
     $member = new stdClass();
@@ -107,13 +140,14 @@ if (!isset($member)) {
     $member->notes = '';
     $member->membershiptypeid = -1;
     $member->statusid = 0;
+    $member->joindate = date('Y-m-d');
 
 
     $dependants = array();
 }
 
 //Set Your Nonce
-$ajax_nonce = wp_create_nonce( "scs-member-check-string" );
+$ajax_nonce = wp_create_nonce("scs-member-check-string");
 
 ?>
 
@@ -143,9 +177,9 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
             <div class="col-md-9 mb-4">
                 <label for="membershiptypeid">Membership Type</label>
                 <select class="form-control" id="membershiptypeid" name="membershiptypeid" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
-                     font-size: 1rem; font-weight: 400; line-height: 1.5;">
+                     font-size: 1rem; font-weight: 400; line-height: 1.5;" <?= $readonly ? 'readonly' : '' ?>>
                     <?php foreach ($membershiptypes as $type) { ?>
-                        <option value="<?= $type->id ?>" <?= $member->membershiptypeid == $type->id ? 'selected="selected"' : ''; ?>><b><?= $type->name ?></b> - <?= $type->description ?></option>
+                    <option value="<?= $type->id ?>" <?= $member->membershiptypeid == $type->id ? 'selected="selected"' : ''; ?>><b><?= $type->name ?></b> - <?= $type->description ?></option>
                     <?php } ?>
                 </select>
                 <div class="invalid-feedback">
@@ -155,10 +189,10 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
 
             <div class="col-md-3 mb-2">
                 <label for="statusid">Membership Status</label>
-                <select <?= $member->id == 0 ? 'readonly' : '' ?> class="form-control" id="statusid" name="statusid" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
+                <select <?= $member->id == 0 ? 'readonly' : '' ?> <?= $readonly ? 'readonly' : '' ?> class="form-control" id="statusid" name="statusid" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;">
                     <?php foreach ($statustypes as $type) { ?>
-                        <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == $statusnew ? 'selected="selected"' : $member->statusid == $type->id ? 'selected="selected"' : ''; ?>><?= $type->name ?> </option>
+                    <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == $statusnew ? 'selected="selected"' : $member->statusid == $type->id ? 'selected="selected"' : ''; ?>><?= $type->name ?> </option>
                     <?php } ?>
                 </select>
                 <div class="invalid-feedback">
@@ -168,26 +202,26 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
         </div>
         <div class="form-row">
             <div class="col-md-4 mb-2">
-                <label for="firstName">First name</label>
-                <input type="text" class="form-control" id="firstName" name="firstname" placeholder="First name" value="<?= $member->firstname ?>" required />
+                <label for="firstName">First name*</label>
+                <input type="text" class="form-control" id="firstName" name="firstname" placeholder="First name" value="<?= $member->firstname ?>" required <?= $readonly ? 'readonly' : '' ?>/>
                 <div class="invalid-feedback">
                     Please provide a first name.
                 </div>
             </div>
             <div class="col-md-4 mb-2">
-                <label for="lastName">Last name</label>
-                <input type="text" class="form-control" id="lastName" name="lastname" placeholder="Last name" value="<?= $member->lastname ?>" required />
+                <label for="lastName">Last name*</label>
+                <input type="text" class="form-control" id="lastName" name="lastname" placeholder="Last name" value="<?= $member->lastname ?>" required <?= $readonly ? 'readonly' : '' ?>/>
                 <div class="invalid-feedback">
                     Please provide a last name.
                 </div>
             </div>
             <div class="col-md-4 mb-2">
-                <label for="username">Username</label>
+                <label for="username">Username*</label>
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="inputGroupPrepend">@</span>
                     </div>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="Username" value="<?= $member->username ?>" aria-describedby="inputGroupPrepend" required />
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Username" value="<?= $member->username ?>" aria-describedby="inputGroupPrepend" required <?= $readonly ? 'readonly' : '' ?>/>
                     <div class="invalid-feedback">
                         Please choose a username.
                     </div>
@@ -196,8 +230,8 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
         </div>
         <div class="form-row">
             <div class="col-md-12 mb-6">
-                <label for="address1">Address Line 1</label>
-                <input type="text" class="form-control" id="address1" name="address1" placeholder="Address 1" value="<?= $member->address1 ?>" required />
+                <label for="address1">Address Line 1*</label>
+                <input type="text" class="form-control" id="address1" name="address1" placeholder="Address 1" value="<?= $member->address1 ?>" required <?= $readonly ? 'readonly' : '' ?>/>
                 <div class="invalid-feedback">
                     Please provide an address.
                 </div>
@@ -206,22 +240,22 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
         <div class="form-row">
             <div class="col-md-12 mb-6">
                 <label for="address2">Address Line 2</label>
-                <input type="text" class="form-control" id="address2" name="address2" placeholder="Address 2" value="<?= $member->address2 ?>" />
+                <input type="text" class="form-control" id="address2" name="address2" placeholder="Address 2" value="<?= $member->address2 ?>" <?= $readonly ? 'readonly' : '' ?>/>
             </div>
 
         </div>
         <div class="form-row">
             <div class="col-md-6 mb-3">
-                <label for="city">City</label>
-                <input type="text" class="form-control" id="city" name="city" placeholder="City" value="<?= $member->city ?>" required />
+                <label for="city">City*</label>
+                <input type="text" class="form-control" id="city" name="city" placeholder="City" value="<?= $member->city ?>" required <?= $readonly ? 'readonly' : '' ?> />
                 <div class="invalid-feedback">
                     Please provide a valid city.
                 </div>
             </div>
             <div class="col-md-3 mb-3">
-                <label for="state">State</label>
+                <label for="state">State*</label>
                 <select class="form-control" id="state" name="state" placeholder="State" style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
-                     font-size: 1rem; font-weight: 400; line-height: 1.5;" required>
+                     font-size: 1rem; font-weight: 400; line-height: 1.5;" required <?= $readonly ? 'readonly' : '' ?>>
                     <option value="">--Please Select--</option>
                     <option <?php if ($member->state == "AL") echo 'selected'; ?> value="AL">Alabama</option>
                     <option <?php if ($member->state == "AK") echo 'selected'; ?> value="AK">Alaska</option>
@@ -282,36 +316,42 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
                 </div>
             </div>
             <div class="col-md-3 mb-3">
-                <label for="zipcode">Zip</label>
-                <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Zip" pattern="(\d{5}([\-]\d{4})?)" value="<?= $member->zipcode ?>" required>
+                <label for="zipcode">Zip*</label>
+                <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Zip" pattern="(\d{5}([\-]\d{4})?)" value="<?= $member->zipcode ?>" required <?= $readonly ? 'readonly' : '' ?>>
                 <div class="invalid-feedback">
                     Please provide a valid zip.
                 </div>
             </div>
         </div>
         <div class="form-row">
-            <div class="col-md-4 mb-2">
+            <div class="col-md-3 mb-2">
                 <label for="phone">Phone</label>
-                <input type="tel" class="form-control" id="phone" name="phone" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Phone Number" value="<?= $member->phone ?>">
+                <input type="tel" class="form-control" id="phone" name="phone" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Phone Number" value="<?= $member->phone ?>" <?= $readonly ? 'readonly' : '' ?> />
                 <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small>
                 <div class="invalid-feedback">
                     Please provide a valid phone number.
                 </div>
             </div>
-            <div class="col-md-4 mb-2">
+            <div class="col-md-3 mb-2">
                 <label for="mobile">Mobile</label>
-                <input type="tel" class="form-control" id="mobile" name="mobile" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Mobile Number" value="<?= $member->mobile ?>" />
+                <input type="tel" class="form-control" id="mobile" name="mobile" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Mobile Number" value="<?= $member->mobile ?>" <?= $readonly ? 'readonly' : '' ?> />
                 <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small>
                 <div class="invalid-feedback">
                     Please provide a valid mobile.
                 </div>
             </div>
-            <div class="col-md-4 mb-2">
-                <label for="email">Email</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="Email" required value="<?= $member->email ?>" />
+            <div class="col-md-3 mb-2">
+                <label for="email">Email*</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="Email" required value="<?= $member->email ?>" <?= $readonly ? 'readonly' : '' ?> />
                 <div class="invalid-feedback">
                     Please provide a valid email.
                 </div>
+            </div>
+
+            <div class="col-md-3 mb-2">
+                <label for="joindate"><?= $member->id == 0 ? 'Application Date' : 'Join Date'?> </label>
+                <input readonly type="text" class="form-control" id="joindate" name="joindate" value="<?= $member->joindate ?>" />
+                
             </div>
 
 
@@ -320,11 +360,11 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
 
             <div class="col-md-3 mb-2">
                 <label for="employer">Employer</label>
-                <input type="text" class="form-control" id="employer" name="employer" placeholder="Employer" value="<?= $member->employer ?>" />
+                <input type="text" class="form-control" id="employer" name="employer" placeholder="Employer" value="<?= $member->employer ?>" <?= $readonly ? 'readonly' : '' ?>/>
             </div>
             <div class="col-md-9 mb-4">
                 <label for="notes">Application Notes</label>
-                <textarea class="form-control" id="notes" name="notes" aria-label="With textarea"><?= $member->notes ?></textarea>
+                <textarea class="form-control" id="notes" name="notes" aria-label="With textarea" <?= $readonly ? 'readonly' : '' ?>><?= $member->notes ?></textarea>
                 <small id="passwordHelpBlock" class="form-text text-muted">
                     Please enter sponsors, clubs members you know, and other information relevant to joining our club.
                 </small>
@@ -347,8 +387,12 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
                 </tbody>
             </table>
         </div>
-        <button class="btn btn-primary" type="button" id="mmsubmit">Submit form</button>
-        <button class="btn btn-secondary" type="button" id="addDependants">Add Dependants</button>
+        <button class="btn btn-primary" type="button" id="mmsubmit" <?= $canupdate ? '' : 'hidden' ?>>Submit form</button>
+        <button class="btn btn-secondary" type="button" id="addDependants" <?= $canupdate ? '' : 'hidden' ?>>Add Dependants</button>
+        <button class="btn btn-secondary" type="button" <?= $back ? '' : 'hidden' ?> 
+            onclick= "window.location.href = '<?php echo esc_url(add_query_arg(array('page' => wp_unslash($_REQUEST['page'])), admin_url('admin.php'))); ?>'"><?php _e('Back', 'scsmm') ?>
+        </button>
+
     </form>
 
 </div>
@@ -419,9 +463,10 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
                 var res = JSON.parse(response);
 
 
-                if (res.success)
+                if (res.success) {
                     displaySuccess(res.msg);
-                else
+                    window.location.href = '<?= $redirect ?>';
+                } else
                     displayAlert(res.msg);
 
                 jQuery("#loader").hide();
@@ -466,8 +511,8 @@ $ajax_nonce = wp_create_nonce( "scs-member-check-string" );
                     this.name = "lastname" + newRow;
                     jQuery(this).attr('data-row', "row" + newRow);
                     break;
-                case "relationship":
-                    this.name = "relationship" + newRow;
+                case "relationshipid":
+                    this.name = "relationshipid" + newRow;
                     jQuery(this).attr('data-row', "row" + newRow);
                     break;
                 case "phone":

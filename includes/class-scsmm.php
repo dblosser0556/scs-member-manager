@@ -69,12 +69,18 @@ class Scsmm
      */
     public function __construct()
     {
-        if (defined('SCSMM_VERSION')) {
-            $this->version = SCSMM_VERSION;
+        if (defined('PLUGIN_VERSION')) {
+            $this->version = PLUGIN_VERSION;
         } else {
             $this->version = '1.0.0';
         }
-        $this->plugin_name = 'scsmm';
+
+        if (defined('PLUGIN_TEXT_DOMAIN')) {
+            $this->plugin_name = PLUGIN_TEXT_DOMAIN;
+        } else {
+            $this->plugin_name = 'scsmm';
+        }
+    
 
         $this->load_dependencies();
         $this->set_locale();
