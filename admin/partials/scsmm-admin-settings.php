@@ -31,7 +31,9 @@ if (!current_user_can('manage_options')) {
 
     <h2 class="nav-tab-wrapper">
         <a href="?page=scsmm-settings&tab=redirect_options" class="nav-tab <?php echo $active_tab == 'redirect_options' ? 'nav-tab-active' : ''; ?>">Redirect Options</a>
-        <a href="?page=scsmm-settings&tab=types_options" class="nav-tab <?php echo $active_tab == 'types_options' ? 'nav-tab-active' : ''; ?>">Type Options</a>
+        <a href="?page=scsmm-settings&tab=membership_options" class="nav-tab <?php echo $active_tab == 'membership_options' ? 'nav-tab-active' : ''; ?>">Type Options</a>
+        <a href="?page=scsmm-settings&tab=relationship_options" class="nav-tab <?php echo $active_tab == 'relationship_options' ? 'nav-tab-active' : ''; ?>">Relationships</a>
+        <a href="?page=scsmm-settings&tab=status_options" class="nav-tab <?php echo $active_tab == 'status_options' ? 'nav-tab-active' : ''; ?>">Status</a>
     </h2>
     <?php
     if ($active_tab == 'redirect_options') { ?>
@@ -152,7 +154,11 @@ if (!current_user_can('manage_options')) {
         </table>
         <p class="submit"><input type="submit" value="Save Changes" class="button-primary" name="Submit"></p>
     </form>
-    <?php } else if ($active_tab == 'types_options') { 
-        require_once PLUGIN_DIR . 'admin/partials/scsmm-admin-membership-type-list.php';
+    <?php } else if ($active_tab == 'membership_options') {
+        require_once PLUGIN_DIR . 'admin/partials/settings/scsmm-admin-membership-type-list.php';
+    } else if ($active_tab == 'relationship_options') {
+        require_once PLUGIN_DIR . 'admin/partials/settings/scsmm-admin-relationship-type-list.php';
+    } else if ($active_tab == 'status_options') {
+        require_once PLUGIN_DIR . 'admin/partials/settings/scsmm-admin-status-list.php';
     }  ?>
 </div>

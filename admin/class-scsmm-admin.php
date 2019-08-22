@@ -195,8 +195,9 @@ class Scsmm_Admin
 			array($this, 'load_admin_settings')
 		);
 		add_action('load-' . $page_hook, array($this, 'load_membership_types_list_table_screen_options'));
-		
-		// a email types list
+		add_action('load-' . $page_hook, array($this, 'load_relationship_types_list_table_screen_options'));
+		add_action('load-' . $page_hook, array($this, 'load_status_list_table_screen_options'));
+
 		add_submenu_page(
 			$this->plugin_name,
 			'Email Member',
@@ -216,11 +217,14 @@ class Scsmm_Admin
 		);
 
 		add_action('load-' . $page_hook, array($this, 'load_member_list_table_screen_options'));
+		
 	}
 
 	public function load_admin_settings()
 	{
 		$this->membership_type_list_table->prepare_items();
+		$this->relationship_type_list_table->prepare_items();
+		$this->status_list_table->prepare_items();
 		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-settings.php';
 	}
 
@@ -276,8 +280,8 @@ class Scsmm_Admin
 		);
 
 		add_screen_option('per_page', $arguments);
-		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/libraries/class-wp-list-table.php';
-		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-scsmm-membership-list.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/includes/libraries/class-wp-list-table.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/includes/class-scsmm-membership-list.php';
 		$this->member_list_table = new Member_List_Table($this->plugin_name);
 	}
 
@@ -289,10 +293,40 @@ class Scsmm_Admin
 		);
 
 		add_screen_option('per_page', $arguments);
-		require_once PLUGIN_DIR . 'includes/libraries/class-wp-list-table.php';
-		require_once PLUGIN_DIR . 'includes/class-scsmm-membership-type-list.php';
+		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
+		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-membership-type-list.php';
 
         $this->membership_type_list_table = new Membership_Type_List_Table($this->plugin_name);
+	}
+
+	public function load_status_list_table_screen_options() {
+		$arguments = array(
+			'label' 	=> __('Types Per Page', $this->plugin_name),
+			'default'	=> 5,
+			'option' 	=> 'status_per_page'
+		);
+
+		add_screen_option('per_page', $arguments);
+		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
+		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-status-list.php';
+
+        $this->status_list_table = new Status_List_Table($this->plugin_name);
+	}
+
+
+	// 
+	public function load_relationship_types_list_table_screen_options() {
+		$arguments = array(
+			'label' 	=> __('Types Per Page', $this->plugin_name),
+			'default'	=> 5,
+			'option' 	=> 'relationship_types_per_page'
+		);
+
+		add_screen_option('per_page', $arguments);
+		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
+		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-relationship-type-list.php';
+
+        $this->relationship_type_list_table = new Relationship_Type_List_Table($this->plugin_name);
 	}
 
 	/**

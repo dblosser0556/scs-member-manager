@@ -1,6 +1,6 @@
 <div class="wrap">
-    <h2><?php _e('WP Member List', $this->plugin_name); ?></h2>
-
+    <h1 class="wp-heading-inline"><?php _e("Membership List", $this->plugin_name); ?></h1>
+    <hr class="wp-header-end">
     <div id="scsmm-member-list">
         <div id="scsmm-post-body">
             <form id="scsmm-member-list-form" action="" method="get">
