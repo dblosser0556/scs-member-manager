@@ -79,7 +79,7 @@ class Scsmm_Admin
 		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/scsmm-admin.css', array(), $this->version, 'all');
 
 		// include bootstrap from common directory
-		//wp_enqueue_style($this->plugin_name . '-load-bs-admin',  plugins_url('includes/css/bootstrap.min.css', __DIR__), array(), $this->version, 'all');
+		wp_enqueue_style($this->plugin_name . '-load-bs-admin',  plugins_url('includes/css/bootstrap.min.css', __DIR__), array(), $this->version, 'all');
 	}
 
 	/**
@@ -106,7 +106,7 @@ class Scsmm_Admin
 
 		// add the bootstrap scripts
 
-		//wp_enqueue_script($this->plugin_name . "bootstrap-admin", plugins_url('includes/js/bootstrap.bundle.min.js', __DIR__), array('jquery'), $this->version, false);
+		wp_enqueue_script($this->plugin_name . "bootstrap-admin", plugins_url('includes/js/bootstrap.bundle.min.js', __DIR__), array('jquery'), $this->version, false);
 	}
 
 
@@ -123,69 +123,21 @@ class Scsmm_Admin
 		 */
 		//add_options_page( 'Reserve Me resource Setup', 'Add resources', 'manage_options', $this->plugin_name, array($this, 'display_plugin_setup_page')
 		//);
-		add_menu_page(
+		$page_hook = add_menu_page(
 			'Manage Memberships',
 			__('Manage Members', 'scsmm'),
 			'manage_options',
 			$this->plugin_name,
-			array($this, 'load_admin_memberships'),
+			array($this, 'load_member_list_table'),
 			'dashicons-groups',
 			6
 		);
-
-		// Membership list
-		add_submenu_page(
-			$this->plugin_name,
-			'Member Manager - Memberships',
-			__('Memberships', 'scsmm'),
-			'manage_options',
-			$this->plugin_name,
-			array($this, 'load_admin_memberships')
-		);
-
-		// Edit Membership
-		add_submenu_page(
-			null,
-			'Member Manager - Edit Membership',
-			__('Membership', 'scsmm'),
-			'manage_options',
-			($this->plugin_name) . '-membership',
-			array($this, 'load_admin_membership')
-		);
+		// load the options list - required for wp_list_table to function
+		add_action('load-' . $page_hook, array($this, 'load_member_list_table_screen_options'));
 
 
-		// Membership types list
-		add_submenu_page(
-			$this->plugin_name,
-			'Member Manager - Membership Types',
-			__('Membership Types', 'scsmm'),
-			'manage_options',
-			($this->plugin_name) . '-membership-types',
-			array($this, 'load_admin_membership_types')
-		);
 
-
-		// aRelationship types list
-		add_submenu_page(
-			$this->plugin_name,
-			'Member Manager Relationship Types',
-			__('Relationship Types', 'scsmm'),
-			'manage_options',
-			($this->plugin_name) . '-relationship-types',
-			array($this, 'load_admin_relationship_types')
-		);
-
-		// a status types list
-		add_submenu_page(
-			$this->plugin_name,
-			'Member Manager Status Setup',
-			__('Status', 'scsmm'),
-			'manage_options',
-			($this->plugin_name) . '-status-types',
-			array($this, 'load_admin_status_types')
-		);
-
-		// a status types list
+		// settings
 		$page_hook = add_submenu_page(
 			$this->plugin_name,
 			'Member Manager Settings Setup',
@@ -194,6 +146,7 @@ class Scsmm_Admin
 			($this->plugin_name) . '-settings',
 			array($this, 'load_admin_settings')
 		);
+		// load the options list - required for wp_list_table to function
 		add_action('load-' . $page_hook, array($this, 'load_membership_types_list_table_screen_options'));
 		add_action('load-' . $page_hook, array($this, 'load_relationship_types_list_table_screen_options'));
 		add_action('load-' . $page_hook, array($this, 'load_status_list_table_screen_options'));
@@ -207,17 +160,15 @@ class Scsmm_Admin
 			array($this, 'load_admin_email_page')
 		);
 
-		$page_hook = add_submenu_page(
-			$this->plugin_name,
-			'Member List',
-			__('Member List', $this->plugin_name),
+		// Edit Membership
+		add_submenu_page(
+			null,
+			'Member Manager - Edit Membership',
+			__('Membership', 'scsmm'),
 			'manage_options',
-			($this->plugin_name) . '-member-list',
-			array($this, 'load_member_list_table')
+			($this->plugin_name) . '-membership',
+			array($this, 'load_admin_membership')
 		);
-
-		add_action('load-' . $page_hook, array($this, 'load_member_list_table_screen_options'));
-		
 	}
 
 	public function load_admin_settings()
@@ -228,31 +179,6 @@ class Scsmm_Admin
 		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-settings.php';
 	}
 
-	public function load_admin_memberships()
-	{
-		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-memberships.php';
-	}
-
-	public function load_admin_membership()
-	{
-		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-membership.php';
-	}
-
-	public function load_admin_membership_types()
-	{
-		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-membership-types.php';
-	}
-
-
-	public function load_admin_relationship_types()
-	{
-		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-relationship-types.php';
-	}
-
-	public function load_admin_status_types()
-	{
-		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-status-types.php';
-	}
 
 	public function load_admin_email_page()
 	{
@@ -264,6 +190,13 @@ class Scsmm_Admin
 		$this->member_list_table->prepare_items();
 
 		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-member-list.php';
+	}
+
+	public function load_admin_membership()
+	{
+		
+
+		require_once PLUGIN_DIR . 'admin/partials/scsmm-admin-membership.php';
 	}
 
 	/*
@@ -280,12 +213,13 @@ class Scsmm_Admin
 		);
 
 		add_screen_option('per_page', $arguments);
-		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/includes/libraries/class-wp-list-table.php';
-		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/includes/class-scsmm-membership-list.php';
+		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
+		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-membership-list.php';
 		$this->member_list_table = new Member_List_Table($this->plugin_name);
 	}
 
-	public function load_membership_types_list_table_screen_options() {
+	public function load_membership_types_list_table_screen_options()
+	{
 		$arguments = array(
 			'label' 	=> __('Types Per Page', $this->plugin_name),
 			'default'	=> 5,
@@ -296,10 +230,11 @@ class Scsmm_Admin
 		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
 		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-membership-type-list.php';
 
-        $this->membership_type_list_table = new Membership_Type_List_Table($this->plugin_name);
+		$this->membership_type_list_table = new Membership_Type_List_Table($this->plugin_name);
 	}
 
-	public function load_status_list_table_screen_options() {
+	public function load_status_list_table_screen_options()
+	{
 		$arguments = array(
 			'label' 	=> __('Types Per Page', $this->plugin_name),
 			'default'	=> 5,
@@ -310,12 +245,13 @@ class Scsmm_Admin
 		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
 		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-status-list.php';
 
-        $this->status_list_table = new Status_List_Table($this->plugin_name);
+		$this->status_list_table = new Status_List_Table($this->plugin_name);
 	}
 
 
 	// 
-	public function load_relationship_types_list_table_screen_options() {
+	public function load_relationship_types_list_table_screen_options()
+	{
 		$arguments = array(
 			'label' 	=> __('Types Per Page', $this->plugin_name),
 			'default'	=> 5,
@@ -326,7 +262,7 @@ class Scsmm_Admin
 		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
 		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-relationship-type-list.php';
 
-        $this->relationship_type_list_table = new Relationship_Type_List_Table($this->plugin_name);
+		$this->relationship_type_list_table = new Relationship_Type_List_Table($this->plugin_name);
 	}
 
 	/**
@@ -349,7 +285,7 @@ class Scsmm_Admin
 		return "{$wpdb->prefix}scsmm_{$table}";
 	}
 
-	public function get_memberships()
+	/* 	public function get_memberships()
 	{
 		global $wpdb;
 		return $wpdb->get_results("SELECT memberships.*, membership_types.name as type,
@@ -505,11 +441,11 @@ class Scsmm_Admin
 		}
 	}
 
-	// handle member registration insert and update
+ */	// handle member registration insert and update
 	// this is an ajax call.
 	public function member_application()
 	{
-		PC::debug(json_encode($_REQUEST));
+		//PC::debug(json_encode($_REQUEST));
 		global $wpdb;
 
 		// check to ensure we know the requester
@@ -616,6 +552,7 @@ class Scsmm_Admin
 
 			$results['success'] = true;
 			$results['msg'] = 'Application successfully submitted. We will be back shortly.';
+			$results['insert'] = 'insert';
 			print_r(json_encode($results));
 
 
@@ -626,22 +563,22 @@ class Scsmm_Admin
 			$count = $wpdb->update(
 				$member_table,
 				array(
-					'username' => $_REQUEST['username'],
-					'firstname' => $_REQUEST['firstname'],
-					'lastname' => $_REQUEST['lastname'],
-					'address1' => $_REQUEST['address1'],
-					'address2' => $_REQUEST['address2'],
-					'city' => $_REQUEST['city'],
-					'state' => $_REQUEST['state'],
-					'zipcode' => $_REQUEST['zipcode'],
-					'phone' => $_REQUEST['phone'],
-					'mobile' => $_REQUEST['mobile'],
-					'employer' => $_REQUEST['employer'],
-					'email' => $_REQUEST['email'],
-					'notes' => $_REQUEST['notes'],
+					'username' => sanitize_text_field($_REQUEST['username']),
+					'firstname' => $firstname,
+					'lastname' => $lastname,
+					'address1' => sanitize_text_field($_REQUEST['address1']),
+					'address2' => sanitize_text_field($_REQUEST['address2']),
+					'city' => sanitize_text_field($_REQUEST['city']),
+					'state' => sanitize_text_field($_REQUEST['state']),
+					'zipcode' => sanitize_text_field($_REQUEST['zipcode']),
+					'phone' => sanitize_text_field($_REQUEST['phone']),
+					'mobile' => sanitize_text_field($_REQUEST['mobile']),
+					'employer' => sanitize_text_field($_REQUEST['employer']),
+					'email' => $email,
+					'notes' => $notes,
 					'membershiptypeid' => (int) $_REQUEST['membershiptypeid'],
 					'statusid' => (int) $_REQUEST['statusid'],
-					'joindate' => (int) $_REQUEST['joindate']
+					'joindate' => sanitize_text_field($_REQUEST['joindate'])
 				),
 				array('id' => $_REQUEST['id']),
 				array(
@@ -665,9 +602,9 @@ class Scsmm_Admin
 
 			for ($i = 1; $i <= $dependantCount; $i++) {
 				if ((int) $_REQUEST['id' . $i] > 0) {
-					$count = $this->updateDependant($membershipid, $i);
+					$count = $this->updateDependant($id, $i);
 				} else {
-					$count = $this->insertDependant($membershipid, $i);
+					$count = $this->insertDependant($id, $i);
 				}
 
 				// check for errors	
@@ -677,6 +614,7 @@ class Scsmm_Admin
 			}
 			$results['success'] = true;
 			$results['msg'] = 'Member details successfully updated.';
+			$results['insert'] = 'update';
 			print_r(json_encode($results));
 			die();
 		}
@@ -690,11 +628,11 @@ class Scsmm_Admin
 		$count =  $wpdb->insert(
 			$dependant_table,
 			array(
-				'firstname' => $_REQUEST['firstname' . $i],
-				'lastname' => $_REQUEST['lastname' . $i],
-				'phone' => $_REQUEST['phone' . $i],
-				'mobile' => $_REQUEST['mobile' . $i],
-				'email' => $_REQUEST['email' . $i],
+				'firstname' => sanitize_text_field($_REQUEST['firstname' . $i]),
+				'lastname' => sanitize_text_field($_REQUEST['lastname' . $i]),
+				'phone' => sanitize_text_field($_REQUEST['phone' . $i]),
+				'mobile' => sanitize_text_field($_REQUEST['mobile' . $i]),
+				'email' => sanitize_text_field($_REQUEST['email' . $i]),
 				'membershipid' => $membershipid,
 				'relationshipid' => $_REQUEST['relationshipid' . $i]
 			),
@@ -715,16 +653,16 @@ class Scsmm_Admin
 	function updateDependant($membershipid, $i)
 	{
 		global $wpdb;
-		$dependant_table = $this->getTable('dependantlist');
+		$dependant_table = $this->getTable('dependent_list');
 
-		return $wpdb->insert(
+		return $wpdb->update(
 			$dependant_table,
 			array(
-				'firstname' => $_REQUEST['firstname' . $i],
-				'lastname' => $_REQUEST['lastname' . $i],
-				'phone' => $_REQUEST['phone' . $i],
-				'mobile' => $_REQUEST['mobile' . $i],
-				'email' => $_REQUEST['email' . $i],
+				'firstname' => sanitize_text_field($_REQUEST['firstname' . $i]),
+				'lastname' => sanitize_text_field($_REQUEST['lastname' . $i]),
+				'phone' => sanitize_text_field($_REQUEST['phone' . $i]),
+				'mobile' => sanitize_text_field($_REQUEST['mobile' . $i]),
+				'email' => sanitize_text_field($_REQUEST['email' . $i]),
 				'membershipid' => $membershipid,
 				'relationshipid' => $_REQUEST['relationshipid' . $i]
 			),
@@ -750,6 +688,7 @@ class Scsmm_Admin
 	// used to validate the input on the settings page.
 	public function validate_settings($input)
 	{
+		// to do - this needs work
 		// all inputs
 		$valid = array();
 

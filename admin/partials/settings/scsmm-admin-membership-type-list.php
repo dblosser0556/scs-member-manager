@@ -29,7 +29,7 @@ $cancel_membership_type_link = esc_url(add_query_arg($query_args_edit_cancel, ad
 
 <div class="wrap">
 
-    <h1 class="wp-heading-inline"><?php _e("Membership Type List", $this->plugin_name); ?></h1>
+    <h1 class="wp-heading-inline"><?= esc_html__("Membership Type List", $this->plugin_name); ?></h1>
     <a href="<?= $new_membership_type_link ?>" class="page-title-action"><?= esc_html__("Add New", $this->plugin_name) ?> </a>
     <hr class="wp-header-end">
     <?php if ($this->membership_type_list_table->get_message() !== '')  { ?>

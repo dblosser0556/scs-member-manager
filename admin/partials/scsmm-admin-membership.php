@@ -14,5 +14,5 @@
 ?>
 
 <?php
-    include_once realpath(plugin_dir_path(__FILE__) . '../../includes/partials/scsmm-membership.php');
+    include_once PLUGIN_DIR . 'includes/partials/scsmm-membership.php';
 ?>

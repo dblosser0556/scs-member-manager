@@ -144,7 +144,7 @@ class Relationship_Type_List_Table extends SCSWP_List_Table
         $query_args_edit_member = array(
             'page'        =>  wp_unslash($_REQUEST['page']),
             'action'    => 'edit_relationship_type',
-            'tab'       => 'relationships_options',
+            'tab'       => 'relationship_options',
             'id'        => absint($item['id']),
             '_wpnonce'    => wp_create_nonce('edit_type_nonce'),
         );

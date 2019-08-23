@@ -73,10 +73,10 @@ $cancel_status_link = esc_url(add_query_arg($query_args_edit_cancel, admin_url('
                         <th scope="col" class="manage-column column-name">
                             <?= esc_html__("Name*", $this->plugin_name) ?>
                         </th>
-                        <th scope="col" class="manage-column column-description">
+                        <th scope="col" class="manage-column column-work_flow_order">
                             <?= esc_html__("Workflow Order", $this->plugin_name) ?>
                         </th>
-                        <th scope="col" class="manage-column column-cost">
+                        <th scope="col" class="manage-column column-work_flow_action">
                             <?= esc_html__("Workflow Action", $this->plugin_name) ?>
                         </th>
                     </tr>

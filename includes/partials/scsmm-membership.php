@@ -34,7 +34,7 @@ function get_member($memberId)
 				AND memberships.id = $memberId");
 }
 
-function get_dependants($memberId)
+function get_dependents($memberId)
 {
     global $wpdb;
     $table_list = getTable('dependent_list');
@@ -90,16 +90,16 @@ function get_success_redirect()
 
 
 
-$relationshiptypes = get_relationship_types();
-$membershiptypes = get_memberships_types();
-$statustypes = get_status_types();
-$statusnew = get_status_new();
+$relationship_types = get_relationship_types();
+$membership_types = get_memberships_types();
+$status_types = get_status_types();
+$status_new = get_status_new();
 $redirect = get_success_redirect();
 
 if (isset($_GET['memberid'])) {
-    $memberid = $_GET['memberid'];
-    $member = get_member($memberid);
-    $dependants = get_dependants($memberid);
+    $member_id = $_GET['memberid'];
+    $member = get_member($member_id);
+    $dependents = get_dependents($member_id);
 }
 
 // handle the viewing and update options
@@ -107,16 +107,16 @@ if (isset($_GET['memberid'])) {
 if (isset($_GET['action'])) {
     if ($_GET['action'] == 'view_member') {
         $readonly = true;
-        $canupdate = false;
+        $can_update = false;
         $back = true;
     } else {
         $readonly = false;
-        $canupdate = true;
+        $can_update = true;
         $back = true;
     }
 } else {
     $readonly = false;
-    $canupdate = true;
+    $can_update = true;
     $back = false;
 }
 
@@ -143,7 +143,7 @@ if (!isset($member)) {
     $member->joindate = date('Y-m-d');
 
 
-    $dependants = array();
+    $dependents = array();
 }
 
 //Set Your Nonce
@@ -164,21 +164,19 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
 
 <div class="container">
-
+    <h2><?= esc_html__('Applicant', PLUGIN_TEXT_DOMAIN) ?> </h2>
     <form id="applyform" class="needs-validation" novalidate>
         <input type="text" hidden name="action" value="member_application" />
         <input type="text" hidden name="id" value="<?= $member->id ?>" />
         <div class="form-row" style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: gray;height:30px;">
-            <div style="float:left;line-height:30px;">
-                <h5>Applicant</h5>
-            </div>
+
         </div>
         <div class="form-row">
             <div class="col-md-9 mb-4">
-                <label for="membershiptypeid">Membership Type</label>
+                <label for="membershiptypeid"><?= esc_html__('Membership Type', PLUGIN_TEXT_DOMAIN)?></label>
                 <select class="form-control" id="membershiptypeid" name="membershiptypeid" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;" <?= $readonly ? 'readonly' : '' ?>>
-                    <?php foreach ($membershiptypes as $type) { ?>
+                    <?php foreach ($membership_types as $type) { ?>
                     <option value="<?= $type->id ?>" <?= $member->membershiptypeid == $type->id ? 'selected="selected"' : ''; ?>><b><?= $type->name ?></b> - <?= $type->description ?></option>
                     <?php } ?>
                 </select>
@@ -191,8 +189,8 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
                 <label for="statusid">Membership Status</label>
                 <select <?= $member->id == 0 ? 'readonly' : '' ?> <?= $readonly ? 'readonly' : '' ?> class="form-control" id="statusid" name="statusid" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;">
-                    <?php foreach ($statustypes as $type) { ?>
-                    <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == $statusnew ? 'selected="selected"' : $member->statusid == $type->id ? 'selected="selected"' : ''; ?>><?= $type->name ?> </option>
+                    <?php foreach ($status_types as $type) { ?>
+                    <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == $status_new ? 'selected="selected"' : $member->statusid == $type->id ? 'selected="selected"' : ''; ?>><?= $type->name ?> </option>
                     <?php } ?>
                 </select>
                 <div class="invalid-feedback">
@@ -203,14 +201,14 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
         <div class="form-row">
             <div class="col-md-4 mb-2">
                 <label for="firstName">First name*</label>
-                <input type="text" class="form-control" id="firstName" name="firstname" placeholder="First name" value="<?= $member->firstname ?>" required <?= $readonly ? 'readonly' : '' ?>/>
+                <input type="text" class="form-control" id="firstName" name="firstname" placeholder="First name" value="<?= $member->firstname ?>" required <?= $readonly ? 'readonly' : '' ?> />
                 <div class="invalid-feedback">
                     Please provide a first name.
                 </div>
             </div>
             <div class="col-md-4 mb-2">
                 <label for="lastName">Last name*</label>
-                <input type="text" class="form-control" id="lastName" name="lastname" placeholder="Last name" value="<?= $member->lastname ?>" required <?= $readonly ? 'readonly' : '' ?>/>
+                <input type="text" class="form-control" id="lastName" name="lastname" placeholder="Last name" value="<?= $member->lastname ?>" required <?= $readonly ? 'readonly' : '' ?> />
                 <div class="invalid-feedback">
                     Please provide a last name.
                 </div>
@@ -221,7 +219,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
                     <div class="input-group-prepend">
                         <span class="input-group-text" id="inputGroupPrepend">@</span>
                     </div>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="Username" value="<?= $member->username ?>" aria-describedby="inputGroupPrepend" required <?= $readonly ? 'readonly' : '' ?>/>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Username" value="<?= $member->username ?>" aria-describedby="inputGroupPrepend" required <?= $readonly ? 'readonly' : '' ?> />
                     <div class="invalid-feedback">
                         Please choose a username.
                     </div>
@@ -231,7 +229,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
         <div class="form-row">
             <div class="col-md-12 mb-6">
                 <label for="address1">Address Line 1*</label>
-                <input type="text" class="form-control" id="address1" name="address1" placeholder="Address 1" value="<?= $member->address1 ?>" required <?= $readonly ? 'readonly' : '' ?>/>
+                <input type="text" class="form-control" id="address1" name="address1" placeholder="Address 1" value="<?= $member->address1 ?>" required <?= $readonly ? 'readonly' : '' ?> />
                 <div class="invalid-feedback">
                     Please provide an address.
                 </div>
@@ -240,7 +238,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
         <div class="form-row">
             <div class="col-md-12 mb-6">
                 <label for="address2">Address Line 2</label>
-                <input type="text" class="form-control" id="address2" name="address2" placeholder="Address 2" value="<?= $member->address2 ?>" <?= $readonly ? 'readonly' : '' ?>/>
+                <input type="text" class="form-control" id="address2" name="address2" placeholder="Address 2" value="<?= $member->address2 ?>" <?= $readonly ? 'readonly' : '' ?> />
             </div>
 
         </div>
@@ -349,9 +347,9 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
             </div>
 
             <div class="col-md-3 mb-2">
-                <label for="joindate"><?= $member->id == 0 ? 'Application Date' : 'Join Date'?> </label>
+                <label for="joindate"><?= $member->id == 0 ? 'Application Date' : 'Join Date' ?> </label>
                 <input readonly type="text" class="form-control" id="joindate" name="joindate" value="<?= $member->joindate ?>" />
-                
+
             </div>
 
 
@@ -360,7 +358,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
             <div class="col-md-3 mb-2">
                 <label for="employer">Employer</label>
-                <input type="text" class="form-control" id="employer" name="employer" placeholder="Employer" value="<?= $member->employer ?>" <?= $readonly ? 'readonly' : '' ?>/>
+                <input type="text" class="form-control" id="employer" name="employer" placeholder="Employer" value="<?= $member->employer ?>" <?= $readonly ? 'readonly' : '' ?> />
             </div>
             <div class="col-md-9 mb-4">
                 <label for="notes">Application Notes</label>
@@ -379,7 +377,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
                     $path = realpath(plugin_dir_path(__FILE__) . 'scsmm-dependent.php');
 
-                    for ($i = 1; $i <= count($dependants); $i++) {
+                    for ($i = 1; $i <= count($dependents); $i++) {
                         include $path;
                     }
 
@@ -387,10 +385,9 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
                 </tbody>
             </table>
         </div>
-        <button class="btn btn-primary" type="button" id="mmsubmit" <?= $canupdate ? '' : 'hidden' ?>>Submit form</button>
-        <button class="btn btn-secondary" type="button" id="addDependants" <?= $canupdate ? '' : 'hidden' ?>>Add Dependants</button>
-        <button class="btn btn-secondary" type="button" <?= $back ? '' : 'hidden' ?> 
-            onclick= "window.location.href = '<?php echo esc_url(add_query_arg(array('page' => wp_unslash($_REQUEST['page'])), admin_url('admin.php'))); ?>'"><?php _e('Back', 'scsmm') ?>
+        <button class="btn btn-primary" type="button" id="mmsubmit" <?= $can_update ? '' : 'hidden' ?>><?= esc_html__('Save', PLUGIN_TEXT_DOMAIN) ?></button>
+        <button class="btn btn-secondary" type="button" id="addDependents" <?= $can_update ? '' : 'hidden' ?>><?= esc_html__('Add Dependents', PLUGIN_TEXT_DOMAIN) ?></button>
+        <button class="btn btn-secondary" type="button" <?= $back ? '' : 'hidden' ?> onclick="window.location.href = '<?php echo esc_url(add_query_arg(array('page' => wp_unslash($_REQUEST['referer'])), admin_url('admin.php'))); ?>'"><?= esc_html__('Back', 'scsmm') ?>
         </button>
 
     </form>
@@ -410,13 +407,13 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
     </tbody>
 </table>
 <script>
-    var dependants = <?= count($dependants) ?>;
+    var dependents = <?= count($dependents) ?>;
 
-    jQuery("button#addDependants").click(function() {
+    jQuery("button#addDependents").click(function() {
         jQuery('#row0').clone().appendTo('#dependantTable tbody');
-        dependants++;
-        updateDepNo(0, dependants);
-        jQuery('#row' + dependants).css('display', '');
+        dependents++;
+        updateDepNo(0, dependents);
+        jQuery('#row' + dependents).css('display', '');
 
     });
 
@@ -426,10 +423,10 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
         jQuery('#' + row).remove();
 
         // renumber all the rows below the row deleted.
-        for (let i = parseInt(row_number) + 1; i <= dependants; i++) {
+        for (let i = parseInt(row_number) + 1; i <= dependents; i++) {
             updateDepNo(i, i - 1);
         }
-        dependants--;
+        dependents--;
     });
 
     jQuery("button#mmsubmit").click(function(event) {
@@ -447,7 +444,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
 
         var applyData = jQuery('#applyform').serialize();
-        applyData += '&dependantCount=' + dependants;
+        applyData += '&dependantCount=' + dependents;
         applyData += '&security=' + '<?= $ajax_nonce; ?>';
 
         jQuery.ajax({
@@ -465,7 +462,8 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
                 if (res.success) {
                     displaySuccess(res.msg);
-                    window.location.href = '<?= $redirect ?>';
+                    if(res.insert == 'insert')
+                        window.location.href = '<?= $redirect ?>';
                 } else
                     displayAlert(res.msg);
 

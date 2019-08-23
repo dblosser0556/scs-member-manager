@@ -60,6 +60,20 @@ class Member_List_Table extends SCSWP_List_Table
         
     }
 
+    public function get_hidden_columns( ){
+        $table_columns = array(
+            'username'  => __('User Name', PLUGIN_TEXT_DOMAIN),
+            'firstname'  => __('First Name', PLUGIN_TEXT_DOMAIN),
+            'lastname'  => __('Last Name', PLUGIN_TEXT_DOMAIN),
+            'address1'  => __('Address1', PLUGIN_TEXT_DOMAIN),
+            'address2'  => __('Address2', PLUGIN_TEXT_DOMAIN),
+            'city'      => __('City', PLUGIN_TEXT_DOMAIN),
+            'state'     => __('State', PLUGIN_TEXT_DOMAIN),
+            'zipcode'   => __('Zip', PLUGIN_TEXT_DOMAIN)
+        );
+        return $table_columns;
+    }
+
     public function no_items()
     {
         _e('No Members Available', 'scsmm');
@@ -120,7 +134,7 @@ class Member_List_Table extends SCSWP_List_Table
 
         $admin_page_url =  admin_url('admin.php');
 
-        // row actions to view usermeta.
+        // row actions to view member data
         $query_args_view_member = array(
             'page'        =>  wp_unslash($_REQUEST['page']),
             'action'    => 'view_member',
@@ -130,7 +144,7 @@ class Member_List_Table extends SCSWP_List_Table
         $view_member_link = esc_url(add_query_arg($query_args_view_member, $admin_page_url));
         $actions['view_member'] = '<a href="' . $view_member_link . '">' . __('View', $this->plugin_name) . '</a>';
 
-        // row actions to add usermeta.
+        // row actions to update member data.
         $query_args_edit_member = array(
             'page'        =>  wp_unslash($_REQUEST['page']),
             'action'    => 'edit_member',
@@ -143,6 +157,59 @@ class Member_List_Table extends SCSWP_List_Table
 
         $row_value = '<strong>' . $item['membername'] . '</strong>';
         return $row_value . $this->row_actions($actions);
+    }
+
+    public function column_status($item) {
+        $admin_page_url =  admin_url('admin.php');
+        
+        global $wpdb;
+        $sql  = "SELECT * FROM {$this->getTable('status_types')} WHERE ID = {$item['statusid']}";
+        $work_flow_action = $wpdb->get_row($sql, ARRAY_A);
+        
+        // workflow should come in a pattern of
+        // action:query_param=value,query_param=value;action:query_param=value,  ...
+        // first get the group of action by splitting on semi-colon
+        // the only two supported additional query parameters are
+        // final_status and email 
+        $avail_actions = explode(';', $work_flow_action['work_flow_action']);
+        
+        // go through the list of these action
+        foreach($avail_actions as $avail_action) {
+            
+            // get the action and the set of parameters
+            $action_parts = explode(":", $avail_action);
+            $query_params = explode(",", $action_parts[1]);
+            
+            // set up the defaults 
+            $query_args = array(
+                'page'          =>  wp_unslash($_REQUEST['page']),
+                'action'        => 'change_status',
+                'memberid'      => absint($item['id']),
+                '_wpnonce'      => wp_create_nonce('change_status_nonce'),
+            );
+
+            // add the final additonal parameters
+            foreach($query_params as $query_param){
+                $parts = explode("=", $query_param);
+                $query_args[$parts[0]] = $parts[1];
+            }
+
+            //create the link
+            $link = esc_url(add_query_arg($query_args, $admin_page_url));
+
+            $actions[$action_parts[0]] = '<a href="' . $link . '">' . $action_parts[0] . '</a>';
+        }
+        
+        $row_value = '<strong>' . $item['status'] . '</strong>';
+
+        if (count($actions)) {
+            return $row_value . $this->row_actions($actions);
+        } else {
+            return $row_value;
+        }
+        
+        
+      
     }
 
     public function column_joindate($item)
@@ -265,7 +332,7 @@ class Member_List_Table extends SCSWP_List_Table
             if (!wp_verify_nonce($nonce, 'view_member_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_edit_member();
+                $this->page_edit_member('view_member', $_REQUEST['memberid']);
                 $this->graceful_exit();
             }
         }
@@ -276,11 +343,20 @@ class Member_List_Table extends SCSWP_List_Table
             if (!wp_verify_nonce($nonce, 'edit_member_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_edit_member();
+                $this->page_edit_member('edit_member', $_REQUEST['memberid']);
                 $this->graceful_exit();
             }
         }
 
+        if ('change_status' === $the_table_action) {
+            $nonce = wp_unslash($_REQUEST['_wpnonce'] );
+            if (!wp_verify_nonce($nonce, 'change_status_nonce')) {
+                $this->invalid_nonce_redirect();
+            } else {
+                $this->page_change_status();
+                
+            }
+        }
 
         if ((isset($_REQUEST['action']) && $_REQUEST['action'] === 'bulk-download') || (isset($_REQUEST['action2']) && $_REQUEST['action2'] === 'bulk-download')) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
@@ -324,19 +400,27 @@ class Member_List_Table extends SCSWP_List_Table
      * 
      * @param int $user_id  user's ID	 
      */
-    public function page_edit_member()
+    public function page_edit_member($action, $memberid)
     {
+        $query_args = array (
+            'page' => $this->plugin_name . '-membership',
+            'action' => $action,
+            'memberid' => $memberid, 
+            'referer' => $_REQUEST['page']
+        );
 
-        $file = plugin_dir_path(dirname(__FILE__)) . 'includes/partials/scsmm-membership.php';
-        include_once($file);
+        $page = add_query_arg($query_args, admin_url('admin.php'));
+        wp_safe_redirect($page);
+        //$file = PLUGIN_DIR . 'includes/partials/scsmm-membership.php';
+        //include_once($file);
     }
 
-    public function page_email_members($memberids)
+    public function page_email_members($ids)
     {
         global $wpdb;
 
         $ids = "";
-        foreach ($memberids as $id) {
+        foreach ($ids as $id) {
             if ($ids == '') $ids = $id;
             else $ids .=  ',' . $id;
         }
@@ -365,13 +449,31 @@ class Member_List_Table extends SCSWP_List_Table
 
     }
 
-    public function page_download_members($memberids)
+    public function page_change_status() {
+        if(isset($_REQUEST['status_final'])) {
+            
+            global $wpdb;
+            
+            $status_final = $_REQUEST['status_final'];
+            
+            $count = $wpdb->update(
+				$this->getTable('member_list'),
+                array('statusid' => $status_final),
+                array('id' => $_REQUEST['memberid']),
+				array('%d'));
+				
+        }
+
+        $url = add_query_arg(array('page' => $_REQUEST['page']), admin_url('admin.php'));
+        wp_safe_redirect($url);
+    }
+    public function page_download_members($ids)
     {
 
         //todo
     }
 
-    public function page_delete_members($memberids)
+    public function page_delete_members($ids)
     {
 
         //todo

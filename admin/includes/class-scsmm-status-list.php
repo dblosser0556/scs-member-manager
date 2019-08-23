@@ -21,14 +21,14 @@ class Status_List_Table extends SCSWP_List_Table
 
 
         $this->plugin_name = $plugin_name;
-        //$this->data = $data;
+
 
 
         parent::__construct(array(
             'plural'    =>    'statuses',    // Plural value used for labels and the objects being listed.
             'singular'    =>    'status',        // Singular label for an object being listed, e.g. 'post'.
             'ajax'        =>    false,        // If true, the parent class will call the _js_vars() method in the footer		
-            'screen'    => 'status'
+            'screen'    => 'status'         //A screen id name, in order to have many lists on one page, must supply unique screen
         ));
 
         $this->can_show_edit = false;
@@ -38,6 +38,11 @@ class Status_List_Table extends SCSWP_List_Table
         add_action('admin_head', array($this, 'admin_header'));
     }
 
+    /*
+    * Setup the column widths
+    * Since we have multiple screen columns with the same name need to be the same
+    * width as each of these styles will be added to the page.
+    */
     public function admin_header()
     {
         // ensure we are on the correct page
@@ -55,6 +60,13 @@ class Status_List_Table extends SCSWP_List_Table
         echo '</style>';
     }
 
+    /**
+     * Supply the list of the columns to be displayed.  Should be the same name as the columns from the 
+     * sql being displayed.
+     *
+     * @param object 
+     * @return string array of column names and their display name.
+     */
     public function get_columns()
     {
         $table_columns = array(
@@ -66,11 +78,17 @@ class Status_List_Table extends SCSWP_List_Table
         return $table_columns;
     }
 
+    /**
+     * List of the bulk actions.
+     *
+     * @param object 
+     * @return string array of bulk actions and their display name.
+     */
     public function get_bulk_actions()
     {
 
-    /*
-    * on hitting apply in bulk actions the url paramas are set as
+        /*
+    * on hitting apply in bulk actions the url params are set as
     * ?action=bulk-download&paged=1&action2=-1
     * 
     * action and action2 are set based on the triggers above and below the table
@@ -82,13 +100,23 @@ class Status_List_Table extends SCSWP_List_Table
         return $actions;
     }
 
+    /**
+     * Defines what is displayed if the are no items to display
+     *
+     * @return void
+     */
     public function no_items()
     {
         _e('No Statuses Available', $this->plugin_name);
     }
 
-    
-    
+
+    /**
+     * Required to be called before the list is displayed.
+     * Used to create the list of columns, and fetch and filter the data.
+     *
+     * @return void
+     */
     public function prepare_items()
     {
 
@@ -137,6 +165,12 @@ class Status_List_Table extends SCSWP_List_Table
         return sprintf($checkbox);
     }
 
+    /**
+     * Sets up the actions available for the name column
+     *
+     * @param [type] $item
+     * @return string
+     */
     protected function column_name($item)
     {
 
@@ -170,7 +204,14 @@ class Status_List_Table extends SCSWP_List_Table
         return $row_value . $this->row_actions($actions);
     }
 
-
+    /**
+     * Determines the displayed value for each row and column of the list
+     * if there is not a specific column function provided.
+     *
+     * @param array $item
+     * @param string $column_name
+     * @return string
+     */
     public function column_default($item, $column_name)
     {
         switch ($column_name) {
@@ -246,7 +287,7 @@ class Status_List_Table extends SCSWP_List_Table
         // check for individual row actions
         $the_table_action = $this->current_action();
 
-
+        // trap the edit action from the name column
         if ('edit_status' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
@@ -256,7 +297,8 @@ class Status_List_Table extends SCSWP_List_Table
                 $this->page_edit_status($_REQUEST['id']);
             }
         }
-        // handle the new button
+
+        // trap the new button action
         if ('add_status' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
@@ -266,6 +308,7 @@ class Status_List_Table extends SCSWP_List_Table
                 $this->page_add_status();
             }
         }
+        // trap the save button from the edit form.
         if ('save_status' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
@@ -276,6 +319,7 @@ class Status_List_Table extends SCSWP_List_Table
             }
         }
 
+        // trap the delete action from the name column
         if ('delete_status' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
@@ -286,6 +330,7 @@ class Status_List_Table extends SCSWP_List_Table
             }
         }
 
+        // trap the cancel button on the edit form to hide the form.
         if ('cancel_status' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
@@ -296,45 +341,56 @@ class Status_List_Table extends SCSWP_List_Table
             }
         }
 
+        // trap the delete action from the bulk actions list.
         if ((isset($_REQUEST['action']) && $_REQUEST['action'] === 'delete') || (isset($_REQUEST['action2']) && $_REQUEST['action2'] === 'delete')) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             if (!wp_verify_nonce($nonce, 'bulk-statuses')) { // verify the nonce.
                 $this->invalid_nonce_redirect();
             } else {
                 $this->page_delete_statuses($_REQUEST['statuses']);
-                
             }
         }
-
     }
 
     /**
-     * View/Edit a member detail data.
-     *
-     * @since   1.0.0
+     * Handles the edit action
+     * Set the item to be displayed and can show edit flag
      * 
-     * @param int $user_id  user's ID	 
+     * @param string $item id
+     * @return void
      */
-    public function page_edit_status($type)
+    public function page_edit_status($id)
     {
         global $wpdb;
         $table_name = $this->getTable('status_types');
-        $this->active_type = $wpdb->get_row("SELECT * FROM $table_name WHERE id = $type");
+        $this->active_type = $wpdb->get_row("SELECT * FROM $table_name WHERE id = $id");
         $this->can_show_edit = true;
     }
+
+    /**
+     * Handles the add action
+     *
+     * @return void
+     */
     public function page_add_status()
     {
         $this->can_show_edit = true;
 
-        // create an empty class for input
-        $type = new stdClass();
-        $type->id = 0;
-        $type->name = '';
-        $type->description = '';
-        $type->cost = '';
+        // create an empty array for input
+        $type = array(
+            id          => 0,
+            name        => '',
+            description => '',
+            cost        => ''
+        );
         $this->active_type = $type;
     }
 
+    /**
+     * Handles the save action from the edit form
+     *
+     * @return void
+     */
     public function page_save_status()
     {
         global $wpdb;
@@ -378,43 +434,71 @@ class Status_List_Table extends SCSWP_List_Table
             );
 
             $this->message = __('Successfully created!', $this->plugin_name);
-
         }
     }
-
+    /**
+     * Handles the cancel action from the edit form, closes the form
+     *
+     * @return void
+     */
     public function page_cancel_status()
     {
         $this->can_show_edit = false;
     }
 
-    public function page_delete_status($type) {
+    /**
+     * Handles the delete action from the name column and
+     * is called from the bulk action for each row selected.
+     *
+     * @param string $id
+     * @return void
+     */
+    public function page_delete_status($id)
+    {
         global $wpdb;
 
         // check to see if any members have this status
         $table_name = $this->getTable('member_list');
-        $results =  $wpdb->get_results("SELECT * FROM $table_name WHERE statusid = $type", ARRAY_A);
+        $results =  $wpdb->get_results("SELECT * FROM $table_name WHERE statusid = $id", ARRAY_A);
         if (count($results) > 0) {
             $this->error_message = __('There are memberships at this status.  The status cannot be deleted.');
             return;
         }
         // delete the status 
         $table_name = $this->getTable('status_types');
-        $wpdb->delete($table_name, array('id' => (int)$type));
+        $wpdb->delete($table_name, array('id' => (int) $id));
         $this->message = __('Successfully deleted!', $this->plugin_name);
     }
 
-    public function page_delete_statuses($types) {
-      foreach($types as $type) {
-          $this->page_delete_status($type);
-      }
+    /**
+     * Handles the delete action from the bulk action
+     *
+     * @param string $ids
+     * @return void
+     */
+    public function page_delete_statuses($ids)
+    {
+        foreach ($ids as $id) {
+            $this->page_delete_status($id);
+        }
     }
-    
 
+    /**
+     * Return the can show edit flag
+     *
+     * @return boolean
+     */
     public function show_edit()
     {
         return $this->can_show_edit;
     }
 
+    /**
+     * Return the values from the active item 
+     *
+     * @param string $attr
+     * @return string
+     */
     public function get_active_type($attr)
     {
         switch ($attr) {
@@ -424,35 +508,33 @@ class Status_List_Table extends SCSWP_List_Table
             case 'name':
                 return $this->active_type->name;
                 break;
-            case 'description':
-                return $this->active_type->description;
+            case 'work_flow_order':
+                return $this->active_type->work_flow_order;
                 break;
-            case 'cost':
-                return $this->active_type->cost;
+            case 'work_flow_action':
+                return $this->active_type->work_flow_action;
+                break;
+            default:
+                return '';
                 break;
         }
     }
+    
     /**
-     * provide message
+     * Return a success message
      *
-     * @since    1.0.0
-     * 
-     * @return message
+     * @return string
      */
-
     public function get_message()
     {
         return $this->message;
     }
 
     /**
-     * provide message
+     * Returns the error message
      *
-     * @since    1.0.0
-     * 
-     * @return message
+     * @return string
      */
-
     public function get_error_message()
     {
         return $this->error_message;
@@ -461,8 +543,6 @@ class Status_List_Table extends SCSWP_List_Table
 
     /**
      * Stop execution and exit
-     *
-     * @since    1.0.0
      * 
      * @return void
      */
