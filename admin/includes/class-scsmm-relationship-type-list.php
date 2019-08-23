@@ -28,7 +28,7 @@ class Relationship_Type_List_Table extends SCSWP_List_Table
             'plural'    =>    'relationship_types',    // Plural value used for labels and the objects being listed.
             'singular'    =>    'relationship_type',        // Singular label for an object being listed, e.g. 'post'.
             'ajax'        =>    false,        // If true, the parent class will call the _js_vars() method in the footer	
-            'screen'    => 'relationships'	
+            'screen'    => 'relationships'
         ));
 
         $this->can_show_edit = false;
@@ -43,7 +43,7 @@ class Relationship_Type_List_Table extends SCSWP_List_Table
         // ensure we are on the correct page
         $page = (isset($_GET['page'])) ? esc_attr($_GET['page']) : false;
         $tab = (isset($_GET['tab'])) ? esc_attr($_GET['tab']) : false;
-        if ($this->plugin_name . '-settings' != $page && $tab != 'relationship_options' ) 
+        if ($this->plugin_name . '-settings' != $page && $tab != 'relationship_options')
             return;
 
         // set up column widths
@@ -63,7 +63,22 @@ class Relationship_Type_List_Table extends SCSWP_List_Table
         );
         return $table_columns;
     }
+    // Returns an associative array containing the bulk action.
+    public function get_bulk_actions()
+    {
 
+    /*
+    * on hitting apply in bulk actions the url paramas are set as
+    * ?action=bulk-download&paged=1&action2=-1
+    * 
+    * action and action2 are set based on the triggers above and below the table
+    * need to pass the tab for the list		 		    
+    */
+        $actions = array(
+            'delete'        => 'Delete Selected'
+        );
+        return $actions;
+    }
 
     public function no_items()
     {
@@ -279,7 +294,6 @@ class Relationship_Type_List_Table extends SCSWP_List_Table
                 $this->page_cancel_relationship_type();
             }
         }
-
     }
 
     /**
@@ -342,7 +356,6 @@ class Relationship_Type_List_Table extends SCSWP_List_Table
             );
 
             $this->message = __('Successfully created!', $this->plugin_name);
-
         }
     }
 
@@ -351,14 +364,15 @@ class Relationship_Type_List_Table extends SCSWP_List_Table
         $this->can_show_edit = false;
     }
 
-    public function page_delete_relationship_type($type) {
+    public function page_delete_relationship_type($type)
+    {
         global $wpdb;
 
         $table_name = $this->getTable('relationship_types');
-        $wpdb->delete($table_name, array('id' => (int)$type));
+        $wpdb->delete($table_name, array('id' => (int) $type));
         $this->message = __('Successfully deleted!', $this->plugin_name);
     }
-   
+
 
     public function show_edit()
     {

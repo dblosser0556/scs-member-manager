@@ -107,6 +107,23 @@ class Membership_Type_List_Table extends SCSWP_List_Table
         ));
     }
 
+    // Returns an associative array containing the bulk action.
+    public function get_bulk_actions()
+    {
+        /*
+	 * on hitting apply in bulk actions the url paramas are set as
+	 * ?action=bulk-download&paged=1&action2=-1
+	 * 
+	 * action and action2 are set based on the triggers above and below the table
+     * need to pass the tab for the list		 		    
+	 */
+        $actions = array(
+            'delete'        => 'Delete Selected'
+        );
+        return $actions;
+    }
+
+
     /**
      * Get value for checkbox column.
      *

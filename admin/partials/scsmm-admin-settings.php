@@ -9,7 +9,7 @@
  * @since      1.0.0
  *
  * @package    Scsmm
- * @subpackage Scsmm/public/partials
+ * @subpackage Scsmm/admin/partials
  */
 
 
@@ -44,10 +44,10 @@ if (!current_user_can('manage_options')) {
             $settings = get_option($this->plugin_name);
 
             $email = $settings['email'];
-            $contactpage = $settings['contact-page'];
-            $contactredirect = $settings['contact-redirect-page'];
-            $applicationpage = $settings['application-page'];
-            $applicationredirect = $settings['application-redirect-page'];
+            $contact_page = $settings['contact-page'];
+            $contact_redirect = $settings['contact-redirect-page'];
+            $application_page = $settings['application-page'];
+            $application_redirect = $settings['application-redirect-page'];
 
             ?>
         <table class="form-table">
@@ -73,7 +73,7 @@ if (!current_user_can('manage_options')) {
                             <?php
                                 $pages = get_pages();
                                 foreach ($pages as $page) {
-                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($contactpage, get_page_link($page->ID))  . '>';
+                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($contact_page, get_page_link($page->ID))  . '>';
                                     $option .= $page->post_title;
                                     $option .= '</option>';
                                     echo $option;
@@ -94,7 +94,7 @@ if (!current_user_can('manage_options')) {
                             <?php
                                 $pages = get_pages();
                                 foreach ($pages as $page) {
-                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($contactredirect, get_page_link($page->ID))  . '>';
+                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($contact_redirect, get_page_link($page->ID))  . '>';
                                     $option .= $page->post_title;
                                     $option .= '</option>';
                                     echo $option;
@@ -116,7 +116,7 @@ if (!current_user_can('manage_options')) {
                             <?php
                                 $pages = get_pages();
                                 foreach ($pages as $page) {
-                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($applicationpage, get_page_link($page->ID))  . '>';
+                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($application_page, get_page_link($page->ID))  . '>';
                                     $option .= $page->post_title;
                                     $option .= '</option>';
                                     echo $option;
@@ -137,7 +137,7 @@ if (!current_user_can('manage_options')) {
                             <?php
                                 $pages = get_pages();
                                 foreach ($pages as $page) {
-                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($applicationredirect, get_page_link($page->ID))  . '>';
+                                    $option = '<option value="' . get_page_link($page->ID) . '"' . selected($application_redirect, get_page_link($page->ID))  . '>';
                                     $option .= $page->post_title;
                                     $option .= '</option>';
                                     echo $option;

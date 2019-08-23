@@ -29,7 +29,7 @@ $cancel_status_link = esc_url(add_query_arg($query_args_edit_cancel, admin_url('
 
 <div class="wrap">
 
-    <h1 class="wp-heading-inline"><?php _e("Membership Type List", $this->plugin_name); ?></h1>
+    <h1 class="wp-heading-inline"><?php _e("Status List", $this->plugin_name); ?></h1>
     <a href="<?= $new_status_link ?>" class="page-title-action"><?= esc_html__("Add New", $this->plugin_name) ?> </a>
     <hr class="wp-header-end">
     <?php if ($this->status_list_table->get_message() !== '')  { ?>
@@ -50,6 +50,7 @@ $cancel_status_link = esc_url(add_query_arg($query_args_edit_cancel, admin_url('
         <div id="scsmm-post-body">
             <form id="scsmm-status-type-list-form" action="" method="get">
                 <input type="hidden" name="page" value="<?php echo $_REQUEST['page'] ?>" />
+                <input type="hidden" name="tab" value="<?php echo $_REQUEST['tab'] ?>" />
                 <?php
                 $this->status_list_table->search_box(__('Find', $this->plugin_name), 'scsmm-status-type-find');
                 $this->status_list_table->display();
@@ -86,11 +87,11 @@ $cancel_status_link = esc_url(add_query_arg($query_args_edit_cancel, admin_url('
                         <td class="name column-name">
                             <input style="width: 100%" type="text" name="name" id="name" required value="<?= $this->status_list_table->get_active_type('name');?>">
                         </td>
-                        <td class="description column-description">
-                            <input style="width: 100%" type="text" name="description" id="description" value="<?= $this->status_list_table->get_active_type('description') ?>">
+                        <td class="work_flow_order column-work_flow_order">
+                            <input style="width: 100%" type="text" name="work_flow_order" id="work_flow_order" value="<?= $this->status_list_table->get_active_type('work_flow_order') ?>">
                         </td>
-                        <td class="cost column-cost">
-                            <input style="width: 100%" type="text" name="cost" id="cost" value="<?= $this->status_list_table->get_active_type('cost'); ?>">
+                        <td class="work_flow_action column-work_flow_action">
+                            <input style="width: 100%" type="text" name="work_flow_action" id="work_flow_action" value="<?= $this->status_list_table->get_active_type('work_flow_action'); ?>">
                         </td>
                     </tr>
                 </tbody>

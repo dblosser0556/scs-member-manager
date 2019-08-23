@@ -50,6 +50,7 @@ $cancel_membership_type_link = esc_url(add_query_arg($query_args_edit_cancel, ad
         <div id="scsmm-post-body">
             <form id="scsmm-membership-type-list-form" action="" method="get">
                 <input type="hidden" name="page" value="<?php echo $_REQUEST['page'] ?>" />
+                <input type="hidden" name="tab" value="<?php echo $_REQUEST['tab'] ?>" />
                 <?php
                 $this->membership_type_list_table->search_box(__('Find', $this->plugin_name), 'scsmm-membership-type-find');
                 $this->membership_type_list_table->display();

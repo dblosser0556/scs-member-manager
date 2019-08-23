@@ -50,8 +50,8 @@ class Status_List_Table extends SCSWP_List_Table
         echo '<style type="text/css">';
         echo '.wp-list-table .column-cb { width: 5%; }';
         echo '.wp-list-table .column-name { width: 20%; }';
-        echo '.wp-list-table .column-workflow-order { width: 10%; }';
-        echo '.wp-list-table .column-workflow-action { width: 65%; }';
+        echo '.wp-list-table .column-workflow_flow_order { width: 10%; }';
+        echo '.wp-list-table .column-workflow_flow_action { width: 65%; }';
         echo '</style>';
     }
 
@@ -66,12 +66,29 @@ class Status_List_Table extends SCSWP_List_Table
         return $table_columns;
     }
 
+    public function get_bulk_actions()
+    {
+
+    /*
+    * on hitting apply in bulk actions the url paramas are set as
+    * ?action=bulk-download&paged=1&action2=-1
+    * 
+    * action and action2 are set based on the triggers above and below the table
+    * need to pass the tab for the list		 		    
+    */
+        $actions = array(
+            'delete'        => 'Delete Selected'
+        );
+        return $actions;
+    }
 
     public function no_items()
     {
         _e('No Statuses Available', $this->plugin_name);
     }
 
+    
+    
     public function prepare_items()
     {
 
@@ -188,7 +205,7 @@ class Status_List_Table extends SCSWP_List_Table
     }
 
     /*
-     * set up the list of sortable columns
+     * fetch the list of items from the database
     */
     public function fetch_table_data()
     {
@@ -215,21 +232,6 @@ class Status_List_Table extends SCSWP_List_Table
         }));
         return $filtered_table_data;
     }
-
-    // Returns an associative array containing the bulk action.
-    /*public function get_bulk_actions()
-    {
-        /*
-	 * on hitting apply in bulk actions the url params are set as
-	 * ?action=bulk-download&paged=1&action2=-1
-	 * 
-	 * action and action2 are set based on the triggers above and below the table		 		    
-	 
-        $actions = array(
-            'delete_statuses'        => 'Delete Member Data',
-        );
-        return $actions;
-    } */
 
 
     public function handle_table_actions()
@@ -294,6 +296,16 @@ class Status_List_Table extends SCSWP_List_Table
             }
         }
 
+        if ((isset($_REQUEST['action']) && $_REQUEST['action'] === 'delete') || (isset($_REQUEST['action2']) && $_REQUEST['action2'] === 'delete')) {
+            $nonce = wp_unslash($_REQUEST['_wpnonce']);
+            if (!wp_verify_nonce($nonce, 'bulk-statuses')) { // verify the nonce.
+                $this->invalid_nonce_redirect();
+            } else {
+                $this->page_delete_statuses($_REQUEST['statuses']);
+                
+            }
+        }
+
     }
 
     /**
@@ -337,9 +349,9 @@ class Status_List_Table extends SCSWP_List_Table
             $wpdb->update(
                 $table_name,
                 array(
-                    'name' => $_POST['name'],
-                    'description' => $_POST['description'],
-                    'cost'          => $_POST['cost']
+                    'name'              => $_POST['name'],
+                    'work_flow_order'   => $_POST['work_flow_order'],
+                    'work_flow_action'  => $_POST['work_flow_action']
                 ),
                 array('id' => (int) $_POST['id']),
                 array(
@@ -354,9 +366,9 @@ class Status_List_Table extends SCSWP_List_Table
             $wpdb->insert(
                 $table_name,
                 array(
-                    'name' => $_POST['name'],
-                    'description' => $_POST['description'],
-                    'cost'          => $_POST['cost']
+                    'name'                      => $_POST['name'],
+                    'work_flow_order'           => $_POST['work_flow_order'],
+                    'work_flow_action'          => $_POST['work_flow_action']
                 ),
                 array(
                     '%s',
@@ -378,9 +390,23 @@ class Status_List_Table extends SCSWP_List_Table
     public function page_delete_status($type) {
         global $wpdb;
 
+        // check to see if any members have this status
+        $table_name = $this->getTable('member_list');
+        $results =  $wpdb->get_results("SELECT * FROM $table_name WHERE statusid = $type", ARRAY_A);
+        if (count($results) > 0) {
+            $this->error_message = __('There are memberships at this status.  The status cannot be deleted.');
+            return;
+        }
+        // delete the status 
         $table_name = $this->getTable('status_types');
         $wpdb->delete($table_name, array('id' => (int)$type));
         $this->message = __('Successfully deleted!', $this->plugin_name);
+    }
+
+    public function page_delete_statuses($types) {
+      foreach($types as $type) {
+          $this->page_delete_status($type);
+      }
     }
     
 
