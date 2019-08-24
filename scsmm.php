@@ -47,6 +47,8 @@ define('PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
 define('PLUGIN_TEXT_DOMAIN', 'scsmm');
 
+define( 'PLUGIN_DB_VERSION', '1.0.0' );
+
 /**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-scsmm-activator.php

@@ -4,7 +4,7 @@
 
 
 
-class Status_List_Table extends SCSWP_List_Table
+class Email_Template_List_Table extends SCSWP_List_Table
 {
     protected $can_show_edit;
 
@@ -25,10 +25,10 @@ class Status_List_Table extends SCSWP_List_Table
 
 
         parent::__construct(array(
-            'plural'    =>    'statuses',    // Plural value used for labels and the objects being listed.
-            'singular'    =>    'status',        // Singular label for an object being listed, e.g. 'post'.
+            'plural'    =>    'emails',    // Plural value used for labels and the objects being listed.
+            'singular'    =>    'email',        // Singular label for an object being listed, e.g. 'post'.
             'ajax'        =>    false,        // If true, the parent class will call the _js_vars() method in the footer		
-            'screen'    => 'status'         //A screen id name, in order to have many lists on one page, must supply unique screen
+            'screen'    => 'email_template'         //A screen id name, in order to have many lists on one page, must supply unique screen
         ));
 
         $this->can_show_edit = false;
@@ -48,15 +48,17 @@ class Status_List_Table extends SCSWP_List_Table
         // ensure we are on the correct page
         $page = (isset($_GET['page'])) ? esc_attr($_GET['page']) : false;
         $tab = (isset($_GET['tab'])) ? esc_attr($_GET['tab']) : false;
-        if ($this->plugin_name . '-settings' != $page && $tab != 'status_options')
+        if ($this->plugin_name . '-settings' != $page && $tab != 'email_options')
             return;
 
         // set up column widths
         echo '<style type="text/css">';
         echo '.wp-list-table .column-cb { width: 5%; }';
+        echo '.wp-list-table .column-id { width: 5%; }';
         echo '.wp-list-table .column-name { width: 20%; }';
-        echo '.wp-list-table .column-workflow_flow_order { width: 10%; }';
-        echo '.wp-list-table .column-workflow_flow_action { width: 65%; }';
+        echo '.wp-list-table .column-recipient_desc { width: 25%; }';
+        echo '.wp-list-table .column-sender_desc { width: 25%; }';
+        echo '.wp-list-table .column-sender_email { width: 20%; }';
         echo '</style>';
     }
 
@@ -71,9 +73,11 @@ class Status_List_Table extends SCSWP_List_Table
     {
         $table_columns = array(
             'cb'                => '<input type = "checkbox" />',
+            'id'              => __('id', $this->plugin_name),
             'name'              => __('Name', $this->plugin_name),
-            'work_flow_order'   => __('Work Flow Order', $this->plugin_name),
-            'work_flow_action'  => __('Work Flow Action Script', $this->plugin_name)
+            'recipient_desc'   => __('Recipient Description', $this->plugin_name),
+            'sender_desc'  => __('Sender Description', $this->plugin_name),
+            'sender_email'  => __('Sender Email', $this->plugin_name)
         );
         return $table_columns;
     }
@@ -107,7 +111,7 @@ class Status_List_Table extends SCSWP_List_Table
      */
     public function no_items()
     {
-        _e('No Statuses Available', $this->plugin_name);
+        _e('No Email Templates Available', $this->plugin_name);
     }
 
 
@@ -136,7 +140,7 @@ class Status_List_Table extends SCSWP_List_Table
         }
 
         // set up pagination
-        $items_per_page = $this->get_items_per_page('status_per_page');
+        $items_per_page = $this->get_items_per_page('email_per_page');
         $table_page = $this->get_pagenum();
 
         $this->items = array_slice($table_data, (($table_page - 1) * $items_per_page), $items_per_page);
@@ -161,7 +165,7 @@ class Status_List_Table extends SCSWP_List_Table
     {
         $checkbox =  '<label class="screen-reader-text" for="type_' . $item['id'] . '">'
             . sprintf(__('Select %s'), $item['id']) . '</label>'
-            . "<input type='checkbox' name='statuses[]' id='status_{$item['id']}' value='{$item['id']}' />";
+            . "<input type='checkbox' name='emails[]' id='email_{$item['id']}' value='{$item['id']}' />";
         return sprintf($checkbox);
     }
 
@@ -180,25 +184,25 @@ class Status_List_Table extends SCSWP_List_Table
         // row actions to edit item.
         $query_args_edit_member = array(
             'page'        =>  wp_unslash($_REQUEST['page']),
-            'action'    => 'edit_status',
-            'tab'       => 'status_options',
+            'action'    => 'edit_email',
+            'tab'       => 'email_options',
             'id'        => absint($item['id']),
             '_wpnonce'    => wp_create_nonce('edit_type_nonce'),
         );
         $edit_member_link = esc_url(add_query_arg($query_args_edit_member, $admin_page_url));
-        $actions['edit_status'] = '<a href="' . $edit_member_link . '">' . __('Edit', $this->plugin_name) . '</a>';
+        $actions['edit_email'] = '<a href="' . $edit_member_link . '">' . __('Edit', $this->plugin_name) . '</a>';
 
         // row actions to edit item.
         $query_args_delete_member = array(
             'page'        =>  wp_unslash($_REQUEST['page']),
-            'action'    => 'delete_status',
-            'tab'       => 'status_options',
+            'action'    => 'delete_email',
+            'tab'       => 'email_options',
             'id'        => absint($item['id']),
             '_wpnonce'    => wp_create_nonce('edit_type_nonce'),
         );
         $delete_member_link = esc_url(add_query_arg($query_args_delete_member, $admin_page_url));
 
-        $actions['delete_status'] = '<a href="' . $delete_member_link . '">' . __('Delete', $this->plugin_name) . '</a>';
+        $actions['delete_email'] = '<a href="' . $delete_member_link . '">' . __('Delete', $this->plugin_name) . '</a>';
 
         $row_value = '<strong>' . $item['name'] . '</strong>';
         return $row_value . $this->row_actions($actions);
@@ -215,8 +219,10 @@ class Status_List_Table extends SCSWP_List_Table
     public function column_default($item, $column_name)
     {
         switch ($column_name) {
-            case 'work_flow_order':
-            case 'work_flow_action':
+            case 'id':
+            case 'recipient_desc':
+            case 'sender_desc':
+            case 'sender_email':
                 return $item[$column_name];
             default:
                 return $item[$column_name];
@@ -234,7 +240,7 @@ class Status_List_Table extends SCSWP_List_Table
          */
         $sortable_columns = array(
             'name' => 'name',
-            'work_flow_order' => 'work_flow_order'
+            'recipient_desc' => 'recipient_desc'
         );
         return $sortable_columns;
     }
@@ -252,11 +258,11 @@ class Status_List_Table extends SCSWP_List_Table
     {
         global $wpdb;
 
-        $orderby = (isset($_GET['orderby'])) ? esc_sql($_GET['orderby']) : 'work_flow_order';
+        $orderby = (isset($_GET['orderby'])) ? esc_sql($_GET['orderby']) : 'name';
         $order = (isset($_GET['order'])) ? esc_sql($_GET['order']) : 'ASC';
 
 
-        $table_name = $this->getTable('status_types');
+        $table_name = $this->getTable('email_templates');
         $results =  $wpdb->get_results("SELECT * FROM $table_name ORDER BY $orderby $order", ARRAY_A);
         return $results;
     }
@@ -288,66 +294,66 @@ class Status_List_Table extends SCSWP_List_Table
         $the_table_action = $this->current_action();
 
         // trap the edit action from the name column
-        if ('edit_status' === $the_table_action) {
+        if ('edit_email' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
             if (!wp_verify_nonce($nonce, 'edit_type_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_edit_status($_REQUEST['id']);
+                $this->page_edit_email($_REQUEST['id']);
             }
         }
 
         // trap the new button action
-        if ('add_status' === $the_table_action) {
+        if ('add_email' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
             if (!wp_verify_nonce($nonce, 'edit_type_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_add_status();
+                $this->page_add_email();
             }
         }
         // trap the save button from the edit form.
-        if ('save_status' === $the_table_action) {
+        if ('save_email' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
             if (!wp_verify_nonce($nonce, 'edit_type_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_save_status();
+                $this->page_save_email();
             }
         }
 
         // trap the delete action from the name column
-        if ('delete_status' === $the_table_action) {
+        if ('delete_email' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
             if (!wp_verify_nonce($nonce, 'edit_type_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_delete_status($_REQUEST['id']);
+                $this->page_delete_email($_REQUEST['id']);
             }
         }
 
         // trap the cancel button on the edit form to hide the form.
-        if ('cancel_status' === $the_table_action) {
+        if ('cancel_email' === $the_table_action) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
             // verify the nonce.
             if (!wp_verify_nonce($nonce, 'edit_type_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_cancel_status();
+                $this->page_cancel_email();
             }
         }
 
         // trap the delete action from the bulk actions list.
         if ((isset($_REQUEST['action']) && $_REQUEST['action'] === 'delete') || (isset($_REQUEST['action2']) && $_REQUEST['action2'] === 'delete')) {
             $nonce = wp_unslash($_REQUEST['_wpnonce']);
-            if (!wp_verify_nonce($nonce, 'bulk-statuses')) { // verify the nonce.
+            if (!wp_verify_nonce($nonce, 'bulk-emails')) { // verify the nonce.
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_delete_statuses($_REQUEST['statuses']);
+                $this->page_delete_emails($_REQUEST['emails']);
             }
         }
     }
@@ -359,10 +365,10 @@ class Status_List_Table extends SCSWP_List_Table
      * @param string $item id
      * @return void
      */
-    public function page_edit_status($id)
+    public function page_edit_email($id)
     {
         global $wpdb;
-        $table_name = $this->getTable('status_types');
+        $table_name = $this->getTable('email_templates');
         $this->active_type = $wpdb->get_row("SELECT * FROM $table_name WHERE id = $id");
         $this->can_show_edit = true;
     }
@@ -372,19 +378,20 @@ class Status_List_Table extends SCSWP_List_Table
      *
      * @return void
      */
-    public function page_add_status()
+    public function page_add_email()
     {
-        
+
+        // create an empty array for input
         $type = new stdClass();
         $type->id = 0;
         $type->name = '';
-        $type->description = '';
-        $type->cost = '';
+        $type->recipient_desc = '';
+        $type->sender_desc  = '';
+        $type->sender_email = '';
+        $type->email_text  = '';
+
         $this->active_type = $type;
-
         $this->can_show_edit = true;
-
-        
     }
 
     /**
@@ -392,10 +399,10 @@ class Status_List_Table extends SCSWP_List_Table
      *
      * @return void
      */
-    public function page_save_status()
+    public function page_save_email()
     {
         global $wpdb;
-        $table_name = $this->getTable('status_types');
+        $table_name = $this->getTable('email_templates');
 
         if (!isset($_POST['name'])) {
             $this->message = __('You must have a name', $this->plugin_name);
@@ -406,12 +413,16 @@ class Status_List_Table extends SCSWP_List_Table
             $wpdb->update(
                 $table_name,
                 array(
-                    'name'              => $_POST['name'],
-                    'work_flow_order'   => $_POST['work_flow_order'],
-                    'work_flow_action'  => $_POST['work_flow_action']
+                    'name'              => sanitize_text_field($_POST['name']),
+                    'recipient_desc'    => sanitize_text_field($_POST['recipient_desc']),
+                    'sender_desc'       => sanitize_text_field($_POST['sender_desc']),
+                    'sender_email'      => sanitize_email($_POST['sender_email']),
+                    'email_text'        => wp_kses_post($_POST['emailtext'])
                 ),
                 array('id' => (int) $_POST['id']),
                 array(
+                    '%s',
+                    '%s',
                     '%s',
                     '%s',
                     '%s'
@@ -423,11 +434,15 @@ class Status_List_Table extends SCSWP_List_Table
             $wpdb->insert(
                 $table_name,
                 array(
-                    'name'                      => $_POST['name'],
-                    'work_flow_order'           => $_POST['work_flow_order'],
-                    'work_flow_action'          => $_POST['work_flow_action']
+                    'name'              => sanitize_text_field($_POST['name']),
+                    'recipient_desc'    => sanitize_text_field($_POST['recipient_desc']),
+                    'sender_desc'       => sanitize_text_field($_POST['sender_desc']),
+                    'sender_email'      => sanitize_email($_POST['sender_email']),
+                    'email_text'        => wp_kses_post($_POST['emailtext'])
                 ),
                 array(
+                    '%s',
+                    '%s',
                     '%s',
                     '%s',
                     '%s'
@@ -442,7 +457,7 @@ class Status_List_Table extends SCSWP_List_Table
      *
      * @return void
      */
-    public function page_cancel_status()
+    public function page_cancel_email()
     {
         $this->can_show_edit = false;
     }
@@ -454,19 +469,19 @@ class Status_List_Table extends SCSWP_List_Table
      * @param string $id
      * @return void
      */
-    public function page_delete_status($id)
+    public function page_delete_email($id)
     {
         global $wpdb;
-
-        // check to see if any members have this status
-        $table_name = $this->getTable('member_list');
-        $results =  $wpdb->get_results("SELECT * FROM $table_name WHERE status_id = $id", ARRAY_A);
-        if (count($results) > 0) {
-            $this->error_message = __('There are memberships at this status.  The status cannot be deleted.');
-            return;
-        }
-        // delete the status 
-        $table_name = $this->getTable('status_types');
+        // todo: add edit before delete
+        // check to see if any members have this email
+        //$table_name = $this->getTable('member_list');
+        //$results =  $wpdb->get_results("SELECT * FROM $table_name WHERE email_id = $id", ARRAY_A);
+        //if (count($results) > 0) {
+        //    $this->error_message = __('There are memberships at this email.  The email cannot be deleted.');
+        //    return;
+       // }
+        // delete the email 
+        $table_name = $this->getTable('email_templates');
         $wpdb->delete($table_name, array('id' => (int) $id));
         $this->message = __('Successfully deleted!', $this->plugin_name);
     }
@@ -477,10 +492,10 @@ class Status_List_Table extends SCSWP_List_Table
      * @param string $ids
      * @return void
      */
-    public function page_delete_statuses($ids)
+    public function page_delete_emails($ids)
     {
         foreach ($ids as $id) {
-            $this->page_delete_status($id);
+            $this->page_delete_email($id);
         }
     }
 
@@ -509,18 +524,24 @@ class Status_List_Table extends SCSWP_List_Table
             case 'name':
                 return $this->active_type->name;
                 break;
-            case 'work_flow_order':
-                return $this->active_type->work_flow_order;
+            case 'recipient_desc':
+                return $this->active_type->recipient_desc;
                 break;
-            case 'work_flow_action':
-                return $this->active_type->work_flow_action;
+            case 'sender_desc':
+                return $this->active_type->sender_desc;
+                break;
+            case 'sender_email':
+                return $this->active_type->sender_email;
+                break;
+            case 'email_text':
+                return $this->active_type->email_text;
                 break;
             default:
                 return '';
                 break;
         }
     }
-    
+
     /**
      * Return a success message
      *

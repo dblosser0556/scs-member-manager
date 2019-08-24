@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
-        "relationshipid",
+        "first_name",
+        "last_name",
+        "relationship_id",
         "scsmm",
         "widefat",
         "wpdb"

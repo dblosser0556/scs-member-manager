@@ -34,6 +34,7 @@ if (!current_user_can('manage_options')) {
         <a href="?page=scsmm-settings&tab=membership_options" class="nav-tab <?php echo $active_tab == 'membership_options' ? 'nav-tab-active' : ''; ?>">Type Options</a>
         <a href="?page=scsmm-settings&tab=relationship_options" class="nav-tab <?php echo $active_tab == 'relationship_options' ? 'nav-tab-active' : ''; ?>">Relationships</a>
         <a href="?page=scsmm-settings&tab=status_options" class="nav-tab <?php echo $active_tab == 'status_options' ? 'nav-tab-active' : ''; ?>">Status</a>
+        <a href="?page=scsmm-settings&tab=email_options" class="nav-tab <?php echo $active_tab == 'email_options' ? 'nav-tab-active' : ''; ?>">Email</a>
     </h2>
     <?php
     if ($active_tab == 'redirect_options') { ?>
@@ -160,5 +161,7 @@ if (!current_user_can('manage_options')) {
         require_once PLUGIN_DIR . 'admin/partials/settings/scsmm-admin-relationship-type-list.php';
     } else if ($active_tab == 'status_options') {
         require_once PLUGIN_DIR . 'admin/partials/settings/scsmm-admin-status-list.php';
+    }    else if ($active_tab == 'email_options') {
+            require_once PLUGIN_DIR . 'admin/partials/settings/scsmm-admin-email-templates-list.php';
     }  ?>
 </div>

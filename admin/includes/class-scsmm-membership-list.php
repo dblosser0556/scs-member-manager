@@ -40,7 +40,7 @@ class Member_List_Table extends SCSWP_List_Table
         echo '.wp-list-table .column-email { width: 15%; }';
         echo '.wp-list-table .column-phone { width: 10%;}';
         echo '.wp-list-table .column-id { width: 5%;}';
-        echo '.wp-list-table .column-joindate { width: 15%;}';
+        echo '.wp-list-table .column-join_date { width: 15%;}';
         echo '</style>';
     }
 
@@ -54,7 +54,7 @@ class Member_List_Table extends SCSWP_List_Table
             'email'     => __('Email', 'scsmm'),
             'phone'     => __('Phone', 'scsmm'),
             'id'        => __('Id' , 'scsmm'),
-            'joindate'  => __('Join Date', 'scsmm')
+            'join_date'  => __('Join Date', 'scsmm')
         );
         return $table_columns;
         
@@ -63,8 +63,8 @@ class Member_List_Table extends SCSWP_List_Table
     public function get_hidden_columns( ){
         $table_columns = array(
             'username'  => __('User Name', PLUGIN_TEXT_DOMAIN),
-            'firstname'  => __('First Name', PLUGIN_TEXT_DOMAIN),
-            'lastname'  => __('Last Name', PLUGIN_TEXT_DOMAIN),
+            'first_name'  => __('First Name', PLUGIN_TEXT_DOMAIN),
+            'last_name'  => __('Last Name', PLUGIN_TEXT_DOMAIN),
             'address1'  => __('Address1', PLUGIN_TEXT_DOMAIN),
             'address2'  => __('Address2', PLUGIN_TEXT_DOMAIN),
             'city'      => __('City', PLUGIN_TEXT_DOMAIN),
@@ -163,7 +163,7 @@ class Member_List_Table extends SCSWP_List_Table
         $admin_page_url =  admin_url('admin.php');
         
         global $wpdb;
-        $sql  = "SELECT * FROM {$this->getTable('status_types')} WHERE ID = {$item['statusid']}";
+        $sql  = "SELECT * FROM {$this->getTable('status_types')} WHERE ID = {$item['status_id']}";
         $work_flow_action = $wpdb->get_row($sql, ARRAY_A);
         
         // workflow should come in a pattern of
@@ -212,9 +212,9 @@ class Member_List_Table extends SCSWP_List_Table
       
     }
 
-    public function column_joindate($item)
+    public function column_join_date($item)
     {
-        return date('Y-m-d', strtotime($item['joindate']));
+        return date('Y-m-d', strtotime($item['join_date']));
     }
 
     public function column_default($item, $column_name)
@@ -224,7 +224,7 @@ class Member_List_Table extends SCSWP_List_Table
             case 'status':
             case 'email':
             case 'phone':
-            case 'joindate':
+            case 'join_date':
                 return $item[$column_name];
             default:
                 return $item[$column_name];
@@ -244,7 +244,7 @@ class Member_List_Table extends SCSWP_List_Table
             'membername' => 'membername',
             'type' => 'type',
             'status' => 'status',
-            'joindate' => 'joindate'
+            'join_date' => 'join_date'
         );
         return $sortable_columns;
     }
@@ -265,14 +265,14 @@ class Member_List_Table extends SCSWP_List_Table
         $orderby = (isset($_GET['orderby'])) ? esc_sql($_GET['orderby']) : 'status';
         $order = (isset($_GET['order'])) ? esc_sql($_GET['order']) : 'ASC';
 
-        $sql = "SELECT memberships.*, Concat(memberships.firstname, ' ', memberships.lastname) as membername, 
+        $sql = "SELECT memberships.*, Concat(memberships.first_name, ' ', memberships.last_name) as membername, 
             membership_types.name as type,
             status_types.name as status FROM 
         {$this->getTable('member_list')} as memberships,
            {$this->getTable('membership_types')} as membership_types,
         {$this->getTable('status_types')} as status_types   
-            WHERE membership_types.id=memberships.membershiptypeid AND
-                status_types.id=memberships.statusid 
+            WHERE membership_types.id=memberships.membership_type_id AND
+                status_types.id=memberships.status_id 
             ORDER BY $orderby  $order";
 
 
@@ -458,7 +458,7 @@ class Member_List_Table extends SCSWP_List_Table
             
             $count = $wpdb->update(
 				$this->getTable('member_list'),
-                array('statusid' => $status_final),
+                array('status_id' => $status_final),
                 array('id' => $_REQUEST['memberid']),
 				array('%d'));
 				

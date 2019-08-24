@@ -9,7 +9,7 @@
  * @since      1.0.0
  *
  * @package    Scsmm
- * @subpackage Scsmm/public/partials
+ * @subpackage Scsmm/admin/partials
  */
 ?>
 

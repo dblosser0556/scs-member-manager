@@ -58,6 +58,11 @@ class Scsmm_Deactivator {
          $table_name = $wpdb->prefix . 'scsmm_status_types';
          $sql = "DROP TABLE IF EXISTS $table_name";
          $wpdb->query($sql);
+
+          // status table
+          $table_name = $wpdb->prefix . 'scsmm_email_templates';
+          $sql = "DROP TABLE IF EXISTS $table_name";
+          $wpdb->query($sql);
  
 	}
 

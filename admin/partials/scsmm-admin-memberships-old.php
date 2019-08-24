@@ -70,10 +70,10 @@ while ($i < sizeof($memberships)) {
                 <td><input class="form-check-input" type="checkbox" value="" id="memberCheck"></td>
                 <td><?=$item->type?></td>
                 <td><?=$item->status?></td>
-                <td><?=$item->firstname?></td>
-                <td><?=$item->lastname?></td>
+                <td><?=$item->first_name?></td>
+                <td><?=$item->last_name?></td>
                 <td><?=$item->email?></td>
-                <td><?=date_i18n(get_option('date_format'), strtotime($item->joindate))?></td>
+                <td><?=date_i18n(get_option('date_format'), strtotime($item->join_date))?></td>
                 <td>
                     <a class="page-action"
                         href="<?= admin_url("admin.php?page=scsmm-membership&memberid={$item->id}") ?>">

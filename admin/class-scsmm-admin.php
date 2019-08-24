@@ -150,6 +150,7 @@ class Scsmm_Admin
 		add_action('load-' . $page_hook, array($this, 'load_membership_types_list_table_screen_options'));
 		add_action('load-' . $page_hook, array($this, 'load_relationship_types_list_table_screen_options'));
 		add_action('load-' . $page_hook, array($this, 'load_status_list_table_screen_options'));
+		add_action('load-' . $page_hook, array($this, 'load_email_templates_list_table_screen_options'));
 
 		add_submenu_page(
 			$this->plugin_name,
@@ -176,6 +177,7 @@ class Scsmm_Admin
 		$this->membership_type_list_table->prepare_items();
 		$this->relationship_type_list_table->prepare_items();
 		$this->status_list_table->prepare_items();
+		$this->email_template_list_table->prepare_items();
 		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-settings.php';
 	}
 
@@ -265,6 +267,21 @@ class Scsmm_Admin
 		$this->relationship_type_list_table = new Relationship_Type_List_Table($this->plugin_name);
 	}
 
+	public function load_email_templates_list_table_screen_options()
+	{
+		$arguments = array(
+			'label' 	=> __('Emails Per Page', $this->plugin_name),
+			'default'	=> 5,
+			'option' 	=> 'emails_per_page'
+		);
+
+		add_screen_option('per_page', $arguments);
+		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
+		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-email-templates-list.php';
+
+		$this->email_template_list_table = new Email_Template_List_Table($this->plugin_name);
+	}
+
 	/**
 	 * Save the screen option setting.
 	 *
@@ -293,8 +310,8 @@ class Scsmm_Admin
 			{$this->getTable('member_list')} as memberships,
 	   		{$this->getTable('membership_types')} as membership_types,
 			{$this->getTable('status_types')} as status_types   
-				WHERE membership_types.id=memberships.membershiptypeid AND
-					status_types.id=memberships.statusid");
+				WHERE membership_types.id=memberships.membership_type_id AND
+					status_types.id=memberships.status_id");
 	}
 
 
@@ -457,8 +474,8 @@ class Scsmm_Admin
 		if (
 			!isset($_REQUEST['id']) ||
 			!isset($_REQUEST['dependantCount']) ||
-			!isset($_REQUEST['firstname']) ||
-			!isset($_REQUEST['lastname']) ||
+			!isset($_REQUEST['first_name']) ||
+			!isset($_REQUEST['last_name']) ||
 			!isset($_REQUEST['email']) ||
 			!isset($_REQUEST['username'])
 		) return $this->handleError('Missing Data.');
@@ -466,22 +483,22 @@ class Scsmm_Admin
 		// sanitize all the fields.
 		$id = (int) sanitize_text_field($_REQUEST['id']);
 		$dependantCount = sanitize_text_field($_REQUEST['dependantCount']);
-		$firstname = sanitize_text_field($_REQUEST['firstname']);
-		$lastname = sanitize_text_field($_REQUEST['lastname']);
+		$first_name = sanitize_text_field($_REQUEST['first_name']);
+		$last_name = sanitize_text_field($_REQUEST['last_name']);
 		$email = sanitize_email($_REQUEST['email']);
 		$notes = sanitize_textarea_field($_REQUEST['notes']);
 
 		$member_table = $this->getTable('member_list');
 
 		if ($id == 0) {
-			$joindate = date(DATE_ATOM);
+			$join_date = date(DATE_ATOM);
 			// insert
 			$count = $wpdb->insert(
 				$member_table,
 				array(
 					'username' => sanitize_text_field($_REQUEST['username']),
-					'firstname' => $firstname,
-					'lastname' => $lastname,
+					'first_name' => $first_name,
+					'last_name' => $last_name,
 					'address1' => sanitize_text_field($_REQUEST['address1']),
 					'address2' => sanitize_text_field($_REQUEST['address2']),
 					'city' => sanitize_text_field($_REQUEST['city']),
@@ -492,9 +509,9 @@ class Scsmm_Admin
 					'employer' => sanitize_text_field($_REQUEST['employer']),
 					'email' => $email,
 					'notes' => $notes,
-					'membershiptypeid' => (int) $_REQUEST['membershiptypeid'],
-					'statusid' => (int) $_REQUEST['statusid'],
-					'joindate' => sanitize_text_field($_REQUEST['joindate'])
+					'membership_type_id' => (int) $_REQUEST['membership_type_id'],
+					'status_id' => (int) $_REQUEST['status_id'],
+					'join_date' => sanitize_text_field($_REQUEST['join_date'])
 				),
 				array(
 					'%s',
@@ -520,10 +537,10 @@ class Scsmm_Admin
 				return $this->handleError('Something went wrong.');
 			}
 
-			$membershipid = $wpdb->insert_id;
+			$membership_id = $wpdb->insert_id;
 
 			for ($i = 1; $i <= $dependantCount; $i++) {
-				$count = $this->insertDependant($membershipid, $i);
+				$count = $this->insertDependant($membership_id, $i);
 				// check for errors	
 				if (!$count) {
 					return $this->handleError('Something went wrong.');
@@ -534,9 +551,9 @@ class Scsmm_Admin
 			if (!isset($emailTo) || ($emailTo == '')) {
 				$emailTo = get_option('admin_email');
 			}
-			$subject = 'Application Request From ' . $firstname . ' ' . $lastname;
-			$body = "Application Request for Name: $firstname . ' ' . $lastname \n\nEmail: $email \n\nComments: $notes";
-			$headers = 'From: ' . $firstname . ' ' . $lastname . ' <' . $email . '>' . "\r\n" . 'Reply-To: ' . $emailTo;
+			$subject = 'Application Request From ' . $first_name . ' ' . $last_name;
+			$body = "Application Request for Name: $first_name . ' ' . $last_name \n\nEmail: $email \n\nComments: $notes";
+			$headers = 'From: ' . $first_name . ' ' . $last_name . ' <' . $email . '>' . "\r\n" . 'Reply-To: ' . $emailTo;
 
 			wp_mail($emailTo, $subject, $body, $headers);
 			$emailSent = true;
@@ -545,7 +562,7 @@ class Scsmm_Admin
 
 			$subject = 'Terrytown Country Club Application';
 			$body = "Thanks for applying to Terrytown Country Club.  We have your application and will be reviewing it shortly.";
-			$headers = 'From: ' . $firstname . ' ' . $lastname . ' <' . $emailTo . '>' . "\r\n" . 'Reply-To: ' . $email;
+			$headers = 'From: ' . $first_name . ' ' . $last_name . ' <' . $emailTo . '>' . "\r\n" . 'Reply-To: ' . $email;
 
 			wp_mail($emailTo, $subject, $body, $headers);
 			$emailSent = true;
@@ -564,8 +581,8 @@ class Scsmm_Admin
 				$member_table,
 				array(
 					'username' => sanitize_text_field($_REQUEST['username']),
-					'firstname' => $firstname,
-					'lastname' => $lastname,
+					'first_name' => $first_name,
+					'last_name' => $last_name,
 					'address1' => sanitize_text_field($_REQUEST['address1']),
 					'address2' => sanitize_text_field($_REQUEST['address2']),
 					'city' => sanitize_text_field($_REQUEST['city']),
@@ -576,9 +593,9 @@ class Scsmm_Admin
 					'employer' => sanitize_text_field($_REQUEST['employer']),
 					'email' => $email,
 					'notes' => $notes,
-					'membershiptypeid' => (int) $_REQUEST['membershiptypeid'],
-					'statusid' => (int) $_REQUEST['statusid'],
-					'joindate' => sanitize_text_field($_REQUEST['joindate'])
+					'membership_type_id' => (int) $_REQUEST['membership_type_id'],
+					'status_id' => (int) $_REQUEST['status_id'],
+					'join_date' => sanitize_text_field($_REQUEST['join_date'])
 				),
 				array('id' => $_REQUEST['id']),
 				array(
@@ -620,7 +637,7 @@ class Scsmm_Admin
 		}
 	}
 
-	function insertDependant($membershipid, $i)
+	function insertDependant($membership_id, $i)
 	{
 		global $wpdb;
 		$dependant_table = $this->getTable('dependent_list');
@@ -628,13 +645,13 @@ class Scsmm_Admin
 		$count =  $wpdb->insert(
 			$dependant_table,
 			array(
-				'firstname' => sanitize_text_field($_REQUEST['firstname' . $i]),
-				'lastname' => sanitize_text_field($_REQUEST['lastname' . $i]),
+				'first_name' => sanitize_text_field($_REQUEST['first_name' . $i]),
+				'last_name' => sanitize_text_field($_REQUEST['last_name' . $i]),
 				'phone' => sanitize_text_field($_REQUEST['phone' . $i]),
 				'mobile' => sanitize_text_field($_REQUEST['mobile' . $i]),
 				'email' => sanitize_text_field($_REQUEST['email' . $i]),
-				'membershipid' => $membershipid,
-				'relationshipid' => $_REQUEST['relationshipid' . $i]
+				'membership_id' => $membership_id,
+				'relationship_id' => $_REQUEST['relationship_id' . $i]
 			),
 			array(
 				'%s',
@@ -650,7 +667,7 @@ class Scsmm_Admin
 		return $count;
 	}
 
-	function updateDependant($membershipid, $i)
+	function updateDependant($membership_id, $i)
 	{
 		global $wpdb;
 		$dependant_table = $this->getTable('dependent_list');
@@ -658,13 +675,13 @@ class Scsmm_Admin
 		return $wpdb->update(
 			$dependant_table,
 			array(
-				'firstname' => sanitize_text_field($_REQUEST['firstname' . $i]),
-				'lastname' => sanitize_text_field($_REQUEST['lastname' . $i]),
+				'first_name' => sanitize_text_field($_REQUEST['first_name' . $i]),
+				'last_name' => sanitize_text_field($_REQUEST['last_name' . $i]),
 				'phone' => sanitize_text_field($_REQUEST['phone' . $i]),
 				'mobile' => sanitize_text_field($_REQUEST['mobile' . $i]),
 				'email' => sanitize_text_field($_REQUEST['email' . $i]),
-				'membershipid' => $membershipid,
-				'relationshipid' => $_REQUEST['relationshipid' . $i]
+				'membership_id' => $membership_id,
+				'relationship_id' => $_REQUEST['relationship_id' . $i]
 			),
 			array('id' => $_REQUEST['id' . $i]),
 			array(
