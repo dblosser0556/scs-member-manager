@@ -152,6 +152,10 @@ class Scsmm_Admin
 		add_action('load-' . $page_hook, array($this, 'load_status_list_table_screen_options'));
 		add_action('load-' . $page_hook, array($this, 'load_email_templates_list_table_screen_options'));
 
+		// load the help pages for the setting pages.
+		add_action('load-' . $page_hook, array($this, 'load_email_templates_list_table_contextual_help'));
+
+		// add a menu link for the email capability
 		add_submenu_page(
 			$this->plugin_name,
 			'Email Member',
@@ -161,7 +165,7 @@ class Scsmm_Admin
 			array($this, 'load_admin_email_page')
 		);
 
-		// Edit Membership
+		// add a call back to Edit Membership so this can be called from code thru a url  
 		add_submenu_page(
 			null,
 			'Member Manager - Edit Membership',
@@ -196,15 +200,15 @@ class Scsmm_Admin
 
 	public function load_admin_membership()
 	{
-		
+
 
 		require_once PLUGIN_DIR . 'admin/partials/scsmm-admin-membership.php';
 	}
 
-	/*
+	/**
+	 * Call back on load of member list table page to set up screen paging options
 	 *
-	 * Set up the screen options for the member-list
-	 * 
+	 * @return void
 	 */
 	public function load_member_list_table_screen_options()
 	{
@@ -219,7 +223,16 @@ class Scsmm_Admin
 		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-membership-list.php';
 		$this->member_list_table = new Member_List_Table($this->plugin_name);
 	}
-
+	/*
+	 *
+	 * Set up the screen options for each of the settings wp-table-list instances
+	 * 
+	 */
+	/**
+	 * Call back on load of membership types list table page to set up screen paging options
+	 *
+	 * @return void
+	 */
 	public function load_membership_types_list_table_screen_options()
 	{
 		$arguments = array(
@@ -234,7 +247,11 @@ class Scsmm_Admin
 
 		$this->membership_type_list_table = new Membership_Type_List_Table($this->plugin_name);
 	}
-
+	/**
+	 * Call back on load of status list table page to set up screen paging options
+	 *
+	 * @return void
+	 */
 	public function load_status_list_table_screen_options()
 	{
 		$arguments = array(
@@ -251,7 +268,11 @@ class Scsmm_Admin
 	}
 
 
-	// 
+	/**
+	 * Call back on load of relationship types list table page to set up screen paging options
+	 *
+	 * @return void
+	 */
 	public function load_relationship_types_list_table_screen_options()
 	{
 		$arguments = array(
@@ -266,7 +287,11 @@ class Scsmm_Admin
 
 		$this->relationship_type_list_table = new Relationship_Type_List_Table($this->plugin_name);
 	}
-
+	/**
+	 * Call back on load of email templates list table page to set up screen paging options
+	 *
+	 * @return void
+	 */
 	public function load_email_templates_list_table_screen_options()
 	{
 		$arguments = array(
@@ -282,6 +307,88 @@ class Scsmm_Admin
 		$this->email_template_list_table = new Email_Template_List_Table($this->plugin_name);
 	}
 
+	/**
+	 * Call back from loading the email templates list page to set up the help
+	 *
+	 * @return void
+	 */
+	public function load_email_templates_list_table_contextual_help()
+	{
+		// We are in the correct screen because we are taking advantage of the load-* action (below)
+
+		$screen = get_current_screen();
+		//$screen->remove_help_tabs();
+		$screen->add_help_tab(array(
+			'id'       => $this->plugin_name . '-options-help',
+			'title'    => __('Options'),
+			'content'  => '<strong>Options</strong></p>'
+				. '<p>If your contact email is something other than the default admin email, please set it here.  This will be the email provided to the applicants.</p>'
+				. '<p>The application redirect page is the page you want you applications to see upon completion of their application submission</p>'
+				. '<p>The contact page and redirect is future use.</p>'
+		));
+
+		$screen->add_help_tab(array(
+			'id'       => $this->plugin_name . '-types-list-help',
+			'title'    => __('Types'),
+			'content'  => '<strong>Membership Type</strong></p>'
+				. '<p>Hovering over a row in the membership types will display action links that allow you to manage membership types. '
+				. 'It is suggested to add new membership types if things like costs change.  The cost can contain text so it is '
+				. 'suggested to include the term of the cost.  So $xx/mo or $nnn/year.</p>'
+				. '<p>You can perform the following actions:</p>'
+				. '<ul><li><p><strong>Edit</strong> opens the edit form that allows you to change the membership information</p></li>'
+				. '<li><p><strong>Delete</strong> allow you to delete the type if it is no longer in use. '
+				. 'You can also delete multiple types at once by using Bulk Actions.</p></li></ul>'
+
+		));
+		$screen->add_help_tab(array(
+			'id'       => $this->plugin_name . 'relationship-types-list-help',
+			'title'    => __('Relationships'),
+			'content'  =>  '<strong>Membership Type</strong></p>'
+				. '<p>Hovering over a row in the relationship types will display action links that allow you to manage them.</p> '
+				. '<p>You can perform the following actions:</p>'
+				. '<ul><li><p><b>Edit</b> opens the edit form that allows you to change the relationship information</p></li>'
+				. '<li><b><p>Delete</b> allow you to delete the type if it is no longer in use. '
+				. 'You can also delete multiple types at once by using Bulk Actions.</p></li></ul>'
+		));
+		$screen->add_help_tab(array(
+			'id'       => $this->plugin_name . '-status-types-list-help',
+			'title'    => __('Status'),
+			'content'  => '<strong>Status</strong></p>'
+				. '<p>Status provides a simple workflow capability. The workflow can update the final status, and '
+				. 'send an email to the member.  The workflow column is used to define this workflow.  The workflow '
+				. 'is expecting to be in the following format.  <strong>Title</strong>:<i>final_status=status number</i><b>,</b><i>email=email id</i> '
+				. 'The only two action that are currently supported are final_status and email.</p>'
+				. '<p><b>Example: </b>  Activate:final_status=8, email=4 where the status id for Active is 8, and the acceptance email is no 4.</p>'
+				. '<p>Hovering over a row in the table will display action links that allow you to manage them.</p> '
+				. '<p>You can perform the following actions:</p>'
+				. '<ul><li><p><b>Edit</b> opens the edit form that allows you to change the status information</p></li>'
+				. '<li><p><b>Delete</b> allows you to delete the status if it is no longer in use. '
+				. 'You can also delete multiple status at once by using Bulk Actions.</p></li></ul>'
+		));
+		$screen->add_help_tab(array(
+			'id'       => $this->plugin_name . '-email-template-list-help',
+			'title'    => __('Email Templates'),
+			'content'  => '<strong>Email Templates</strong></p>'
+			. '<p>Email templates allow the use of predefined emails to be sent to your members.  These can be part of a '
+			. 'status change workflow, or email created for special events.  The capability allows the use of embedding ' 
+			. 'fields into the email that are then filled in with information from the members. For example, you can have a salutatory '
+			. 'statement <b>Dear {firstname} {lastname}</b>.  The system will fill in first name and last name from the members current '
+			. 'member data. </p>'
+			. '<p>Accepted fields are: firstname, lastname, address1, address2, city, state, zipcode. The codes must be enclosed in braces {}</p>'
+			. '<p>Hovering over a row in the table will display action links that allow you to manage them.</p> '
+			. '<p>You can perform the following actions:</p>'
+			. '<ul><li><p><b>Edit</b> opens the edit form that allows you to change the email information<p></li>'
+			. '<li><p><b>Delete</b> allows you to delete the email.  <b>The is no check to see if it is part of a workflow.</b> '
+			. 'You can also delete multiple status at once by using Bulk Actions.<p></li></ul>'	));
+
+		//add more help tabs as needed with unique id's
+
+		// Help sidebars are optional
+		$screen->set_help_sidebar(
+			'<p><strong>' . __('For more information:') . '</strong></p>' .
+				'<p><a href="http://wordpress.org/support/" target="_blank">' . _('Support Forums') . '</a></p>'
+		);
+	}
 	/**
 	 * Save the screen option setting.
 	 *
@@ -302,163 +409,8 @@ class Scsmm_Admin
 		return "{$wpdb->prefix}scsmm_{$table}";
 	}
 
-	/* 	public function get_memberships()
-	{
-		global $wpdb;
-		return $wpdb->get_results("SELECT memberships.*, membership_types.name as type,
-			status_types.name as status FROM 
-			{$this->getTable('member_list')} as memberships,
-	   		{$this->getTable('membership_types')} as membership_types,
-			{$this->getTable('status_types')} as status_types   
-				WHERE membership_types.id=memberships.membership_type_id AND
-					status_types.id=memberships.status_id");
-	}
 
-
-	public function delete_membership($id)
-	{
-		global $wpdb;
-		$table = $this->getTable('member_list');
-		return $wpdb->get_delete($table, array('id' => $id));
-	}
-
-
-	public function get_relationships()
-	{
-		global $wpdb;
-		$table_name = $this->getTable('relationship_types');
-		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
-	}
-
-
-	public function get_membership_types()
-	{
-		global $wpdb;
-		$table_name = $this->getTable('membership_types');
-		return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
-	}
-
-
-	public function update_type_ajax()
-	{
-		global $wpdb;
-		PC::debug($_REQUEST);
-
-		if (
-			!isset($_REQUEST['requestType'])  ||
-			!isset($_REQUEST['name']) ||
-			!isset($_REQUEST['tableName'])
-		) {
-			return $this->handleError('Missing Data.');
-		}
-
-		$tableName = $_REQUEST['tableName'];
-		$requestType = $_REQUEST['requestType'];
-		$id = (int) $_REQUEST['id'];
-
-		$table_types = $this->getTable($_REQUEST['tableName']);
-		if ($requestType == 'delete') {
-			$count = $wpdb->delete(
-				$table_types,
-				array('id' => $id)
-
-			);
-
-			if (!$count) {
-				return $this->handleError('Something went wrong.');
-			}
-
-			$results['success'] = true;
-			$results['msg'] = 'Type was successfully deleted.';
-			print_r(json_encode($results));
-			die();
-		}
-
-
-		if ($requestType == 'get') {
-
-
-			$type = $wpdb->get_row("SELECT *
-				FROM $table_types as types
-					WHERE types.id= $id ");
-			$out = json_encode(array('success' => 1, 'result' => $type));
-			echo $out;
-			die;
-		}
-
-		if ($requestType == 'save') {
-			if ($tableName == 'membership_types') {
-				$inputArray = array(
-					'name' => $_REQUEST['name'],
-					'description' => $_REQUEST['description'],
-					'cost' => $_REQUEST['cost']
-				);
-				$typeArray = array(
-					'%s',
-					'%s',
-					'%d'
-				);
-			} elseif ($tableName == 'relationship_types') {
-				$inputArray = array(
-					'name' => $_REQUEST['name']
-				);
-				$typeArray = array(
-					'%s',
-				);
-			} elseif ($tableName == 'status_types') {
-				$inputArray = array(
-					'name' => $_REQUEST['name'],
-					'work_flow_action' => $_REQUEST['work_flow_action'],
-					'work_flow_order' => $_REQUEST['work_flow_order']
-				);
-				$typeArray = array(
-					'%s',
-					'%s',
-					'%d'
-				);
-			}
-		}
-		// handle update request
-		if ($requestType == 'save' && $id > 0) {
-
-
-			$count = $wpdb->update(
-				$table_types,
-				$inputArray,
-				array('id' => $_REQUEST['id']),
-				$typeArray
-			);
-
-			if (!$count) {
-				return $this->handleError('Something went wrong.');
-			}
-
-			$results['success'] = true;
-			$results['msg'] = 'Type successfully updated.';
-			print_r(json_encode($results));
-			die();
-		}
-
-		// handle new request
-		if ($requestType = 'save' && $id == 0) {
-			$count = $wpdb->insert(
-				$table_types,
-				$inputArray,
-				$typeArray
-			);
-
-			if (!$count) {
-				return $this->handleError('Something went wrong.');
-			}
-
-			$results['success'] = true;
-			$results['msg'] = 'Type successfully created.';
-			print_r(json_encode($results));
-			die();
-		}
-	}
-
- */	// handle member registration insert and update
+	// handle member registration insert and update
 	// this is an ajax call.
 	public function member_application()
 	{

@@ -25,6 +25,7 @@ $query_args_edit_cancel = array(
     '_wpnonce'    => wp_create_nonce('edit_type_nonce'),
 );
 $cancel_email_link = esc_url(add_query_arg($query_args_edit_cancel, admin_url('admin.php')));
+
 ?>
 
 <div class="wrap">
