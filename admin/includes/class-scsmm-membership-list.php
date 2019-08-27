@@ -53,14 +53,14 @@ class Member_List_Table extends SCSWP_List_Table
             'status'    => __('Status', 'scsmm'),
             'email'     => __('Email', 'scsmm'),
             'phone'     => __('Phone', 'scsmm'),
-            'id'        => __('Id' , 'scsmm'),
+            'id'        => __('Id', 'scsmm'),
             'join_date'  => __('Join Date', 'scsmm')
         );
         return $table_columns;
-        
     }
 
-    public function get_hidden_columns( ){
+    public function get_hidden_columns()
+    {
         $table_columns = array(
             'username'  => __('User Name', PLUGIN_TEXT_DOMAIN),
             'first_name'  => __('First Name', PLUGIN_TEXT_DOMAIN),
@@ -159,27 +159,28 @@ class Member_List_Table extends SCSWP_List_Table
         return $row_value . $this->row_actions($actions);
     }
 
-    public function column_status($item) {
+    public function column_status($item)
+    {
         $admin_page_url =  admin_url('admin.php');
-        
+
         global $wpdb;
         $sql  = "SELECT * FROM {$this->getTable('status_types')} WHERE ID = {$item['status_id']}";
         $work_flow_action = $wpdb->get_row($sql, ARRAY_A);
-        
+
         // workflow should come in a pattern of
         // action:query_param=value,query_param=value;action:query_param=value,  ...
         // first get the group of action by splitting on semi-colon
         // the only two supported additional query parameters are
         // final_status and email 
         $avail_actions = explode(';', $work_flow_action['work_flow_action']);
-        
+
         // go through the list of these action
-        foreach($avail_actions as $avail_action) {
-            
+        foreach ($avail_actions as $avail_action) {
+
             // get the action and the set of parameters
             $action_parts = explode(":", $avail_action);
             $query_params = explode(",", $action_parts[1]);
-            
+
             // set up the defaults 
             $query_args = array(
                 'page'          =>  wp_unslash($_REQUEST['page']),
@@ -189,7 +190,7 @@ class Member_List_Table extends SCSWP_List_Table
             );
 
             // add the final additonal parameters
-            foreach($query_params as $query_param){
+            foreach ($query_params as $query_param) {
                 $parts = explode("=", $query_param);
                 $query_args[$parts[0]] = $parts[1];
             }
@@ -199,7 +200,7 @@ class Member_List_Table extends SCSWP_List_Table
 
             $actions[$action_parts[0]] = '<a href="' . $link . '">' . $action_parts[0] . '</a>';
         }
-        
+
         $row_value = '<strong>' . $item['status'] . '</strong>';
 
         if (count($actions)) {
@@ -207,9 +208,6 @@ class Member_List_Table extends SCSWP_List_Table
         } else {
             return $row_value;
         }
-        
-        
-      
     }
 
     public function column_join_date($item)
@@ -349,12 +347,11 @@ class Member_List_Table extends SCSWP_List_Table
         }
 
         if ('change_status' === $the_table_action) {
-            $nonce = wp_unslash($_REQUEST['_wpnonce'] );
+            $nonce = wp_unslash($_REQUEST['_wpnonce']);
             if (!wp_verify_nonce($nonce, 'change_status_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
                 $this->page_change_status();
-                
             }
         }
 
@@ -402,10 +399,10 @@ class Member_List_Table extends SCSWP_List_Table
      */
     public function page_edit_member($action, $memberid)
     {
-        $query_args = array (
+        $query_args = array(
             'page' => $this->plugin_name . '-membership',
             'action' => $action,
-            'memberid' => $memberid, 
+            'memberid' => $memberid,
             'referer' => $_REQUEST['page']
         );
 
@@ -431,7 +428,7 @@ class Member_List_Table extends SCSWP_List_Table
         $members = $wpdb->get_results($sql);
 
         $to = "";
-        foreach( $members as $member) {
+        foreach ($members as $member) {
             if ($to == "") $to = $member->email;
             else $to .= "," . $member->email;
         }
@@ -439,29 +436,92 @@ class Member_List_Table extends SCSWP_List_Table
         if (!session_id()) {
             session_start();
         }
-       
+
         $_SESSION["to-email"] = $to;
         $_SESSION["from-page"] = add_query_arg(array('page' => $this->plugin_name . "-member-list"), admin_url('admin.php'));
-        
+
         // open to 
         $url = add_query_arg(array('page' => $this->plugin_name . "-email"), admin_url('admin.php'));
         wp_safe_redirect($url);
-
     }
 
-    public function page_change_status() {
-        if(isset($_REQUEST['status_final'])) {
-            
+    /**
+     * Undocumented function
+     *
+     * @return void
+     */
+    public function page_change_status()
+    {
+        if (isset($_REQUEST['status_final'])) {
+
             global $wpdb;
-            
+
             $status_final = $_REQUEST['status_final'];
-            
+
             $count = $wpdb->update(
-				$this->getTable('member_list'),
+                $this->getTable('member_list'),
                 array('status_id' => $status_final),
                 array('id' => $_REQUEST['memberid']),
-				array('%d'));
-				
+                array('%d')
+            );
+
+            if (!isset($count)) {
+                $this->errormessage = 'Something went wrong is setting the final status';
+            }
+        }
+
+        if (isset($_REQUEST['email'])) {
+            
+            $id = ($_REQUEST['email']);
+            $memberid = ($_REQUEST['memberid']);
+            
+
+            // get the member
+            $member = $wpdb->get_row( 
+            "SELECT * FROM {$this->getTable('member-list')} 
+                WHERE id = $memberid", ARRAY_A
+            );
+
+            // get the email template
+            $email = $wpdb->get_row( 
+                "SELECT * FROM {$this->getTable('email-templates')} 
+                    WHERE id = $id", ARRAY_A);
+             
+            // sender is stored in the options
+             $options = get_option(PLUGIN_TEXT_DOMAIN);
+
+             if (isset($options['email'])) {
+                 $from =  $options['email']; 
+             } else {
+                 $from =  get_option('admin_email');
+             }
+            // get the email addresses
+            $to = $member->email;
+             
+             // get the url of the check registration option
+             $check_page_url = $options['registration-check-page'];
+
+
+            // parse the message
+            $message = $this->parse_email_template($email->email_text, $member, $check_page_url);
+
+            
+            
+           
+
+            // Get the message subject 
+            // todo store this in email table
+            $subject = "Congratlations for Successfully Applying";
+            
+            // setup  the headers
+            $headers[] = 'From: ' . $from;
+            $headers[] = 'Cc: ' . $from;
+            $headers[] = 'Content-Type: text/html; charset=UTF-8';
+            
+            // send the email
+            wp_mail($to, $subject, $message, $headers);
+            
+
         }
 
         $url = add_query_arg(array('page' => $_REQUEST['page']), admin_url('admin.php'));
@@ -479,6 +539,22 @@ class Member_List_Table extends SCSWP_List_Table
         //todo
     }
 
+    private function parse_email_template($template, $member, $url ) {
+        
+        // go first through all the keys of the member as they are all allowed values
+        $keys = array_keys($member);
+        $content = $template;
+
+        foreach($keys as $key) {
+            $replace = "{" . $key . "}";
+            $content = str_replace($replace, $member[$key], $content);
+        }
+        $url .= '&key=' . $member['registration_key'];
+
+        $content = str_replace('{registation_url}', $url, $content);
+
+        return $content;
+    }
     /**
      * Stop execution and exit
      *

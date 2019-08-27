@@ -47,10 +47,21 @@ class Scsmm_Activator
 
 		// add default data 
 		self::add_default_relationship_types();
-		self::add_default_status_types();
+		self::add_default_membership_types();
+		// adding emails returns the list of email ids
+		$emails = self::add_default_mail_items();
+		// add the status types with one email workflow
+		self::add_default_status_types($emails['application-approved']);
+		
 
 		// store the current database version for future upgrades
 		add_option(PLUGIN_TEXT_DOMAIN . '_db_version', PLUGIN_DB_VERSION);
+
+		// add some default page redirects
+		self::add_default_pages();
+
+		// add default mail items
+	
 	}
 
 	private static function create_status_table()
@@ -232,8 +243,8 @@ class Scsmm_Activator
 
 
 		// email template table
-		$table_dependant_list = $wpdb->prefix . 'scsmm_email_templates';
-		$sql = "CREATE TABLE $table_dependant_list (
+		$table_list = $wpdb->prefix . 'scsmm_email_templates';
+		$sql = "CREATE TABLE $table_list (
 						id mediumint(9) NOT NULL AUTO_INCREMENT,
 						name varchar(25) NOT NULL,
 						recipient_desc varchar(255) NOT NULL,
@@ -277,16 +288,18 @@ class Scsmm_Activator
 		);
 	}
 
-	private static function add_default_status_types()
+	private static function add_default_status_types($registration_email)
 	{
 		global $wpdb;
+
+		
 
 		$table_name = $wpdb->prefix . 'scsmm_status_types';
 		$wpdb->insert(
 			$table_name,
 			array(
 				'name' 				=> 'Applied',
-				'work_flow_action' 	=> 'Activate:final_status=2;Disable:final_status=3',
+				'work_flow_action' 	=> 'Activate:final_status=2,email=' . $registration_email .';Disable:final_status=3',
 				'work_flow_order'	=> '1',
 				'status_key'		=> 'new'
 			)
@@ -311,5 +324,132 @@ class Scsmm_Activator
 				'status_key'		=> 'inactive'
 			)
 		);
+	}
+
+	private static function add_default_membership_types()
+	{
+		global $wpdb;
+
+		$table_name = $wpdb->prefix . 'scsmm_membership_types';
+		$wpdb->insert(
+			$table_name,
+			array(
+				'name' 				=> 'Default',
+				'description'	 	=> 'Default type should be deleted on configuration',
+				'cost'				=> ''
+			)
+		);
+	}
+	private static function add_default_pages()
+	{
+
+
+
+		$pages[] = array(
+			'title' => 'Registration Check',
+			'content' => '[scsmm-registration-check]',
+			'option'	=> 'registration-check-page'
+		);
+
+		$pages[] = array(
+			'title' => 'Registration Check Redirect',
+			'content' => '',
+			'option'	=> 'registration-check-redirect-page'
+		);
+
+
+		$pages[] = array(
+			'title' => 'Registration Expired Redirect',
+			'content' => 'Sorry your registration has expired',
+			'option'	=> 'registration-expired-redirect-page'
+		);
+
+		$pages[] = array(
+			'title' => 'Registration Not Found Redirect',
+			'content' => 'Sorry, your registration is incorrect.',
+			'option'	=> 'registration-not-found-redirect-page'
+		);
+
+		$pages[] = array(
+			'title' => 'Thanks for Applying',
+			'content'	=> 'Thanks for applying',
+			'option'	=> 'application-redirect-page'
+		);
+
+		foreach ($pages as $page) {
+			$new_page_id = self::add_page($page);
+			$options[$page['option']]  = get_permalink($new_page_id);
+		}
+
+		add_option(PLUGIN_TEXT_DOMAIN, $options);
+	}
+
+	private static function add_page($page = array())
+	{
+		//Add Events page on activation:
+
+		$new_page_title = $page['title'];
+		$new_page_content = $page['content'];
+		$new_page_template = ''; //ex. template-custom.php. Leave blank if you don't want a custom page template.
+		//don't change the code below, unless you know what you're doing
+		$page_check = get_page_by_title($new_page_title);
+		$new_page = array(
+			'post_type' => 'page',
+			'post_title' => $new_page_title,
+			'post_content' => $new_page_content,
+			'post_status' => 'publish',
+			'post_author' => 1,
+		);
+		if (!isset($page_check->ID)) {
+			$new_page_id = wp_insert_post($new_page);
+			if (!empty($new_page_template)) {
+				update_post_meta($new_page_id, '_wp_page_template', $new_page_template);
+			}
+			return $new_page_id;
+		}
+	}
+	/**
+	 * Add the default mail items at activation
+	 *
+	 * @return void
+	 */
+	private static function add_default_mail_items()
+	{
+		//need two default emails
+		//default email upon successful registation
+		global $wpdb;
+
+		$table_name = $wpdb->prefix . 'scsmm_email_templates';
+		$wpdb->insert(
+			$table_name,
+			array(
+				'name' 				=> 'Application',
+				'recipient_desc' 	=> 'New Applicant',
+				'sender_desc'		=> 'Application Committee',
+				'sender_email' 		=> '',
+				'email_text'		=> '<p>Dear {firstname} {lastname}:</p>'
+					. '<p>Thanks for applying.  We will be back to you shortly.</p>'
+					. '<p>Registration Committee</p>'
+			)
+		);
+		$emails['application'] = $wpdb->insert_id;
+		
+		
+		$wpdb->insert(
+			$table_name,
+			array(
+				'name' 				=> 'Application Approved',
+				'recipient_desc' 	=> 'New Applicant',
+				'sender_desc'		=> 'Application Committee',
+				'sender_email' 		=> '',
+				'email_text'		=> '<p>Dear {firstname} {lastname}:</p>'
+					. '<p><strong>Congratulations your application has been approved.</strong></p>'
+					. '<p>To register on our web site please use the link below.</p>'
+					. '{registration_url}'
+					. '<p>Registration Committee</p>'
+			)
+		);
+		$emails['application-approved'] = $wpdb->insert_id;
+		return $emails;
 	}
 }

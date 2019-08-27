@@ -109,9 +109,9 @@ class Scsmm_Public {
 		return ob_get_clean();
 	}
 
-	public function contact_shortcode( $atts, $content = null ) {
+	public function registration_check_shortcode ( $atts, $content = null ) {
 		ob_start();
-		include_once( 'partials/'.$this->plugin_name.'-public-contact.php' );
+		include_once( 'partials/'.$this->plugin_name.'-public-registration-check.php' );
 		return ob_get_clean();
 	}
 }

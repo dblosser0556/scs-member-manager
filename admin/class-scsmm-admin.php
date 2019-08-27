@@ -109,23 +109,22 @@ class Scsmm_Admin
 		wp_enqueue_script($this->plugin_name . "bootstrap-admin", plugins_url('includes/js/bootstrap.bundle.min.js', __DIR__), array('jquery'), $this->version, false);
 	}
 
-
+	/**
+	 * Loads the admin menu
+	 *
+	 * @return void
+	 */
 	public function add_scsmm_admin_menu()
 	{
 
-		/*
-		 * Add a settings page for this plugin to the Settings menu.
-		 *
-		 * NOTE:  Alternative menu locations are available via WordPress administration menu functions.
-		 *
-		 *        Administration Menus: http://codex.wordpress.org/Administration_Menus
-		 *
-		 */
-		//add_options_page( 'Reserve Me resource Setup', 'Add resources', 'manage_options', $this->plugin_name, array($this, 'display_plugin_setup_page')
-		//);
+		//add the count of new application as a menu bubble
+		$new_app_count = $this->get_new_application_count();
+		$page_title = $new_app_count > 0 ? __('Manage Members', 'scsmm') . '<span class="awaiting-mod">' . $new_app_count . '</span>' : __('Manage Members', 'scsmm');
+
+		//add the main membership menu
 		$page_hook = add_menu_page(
 			'Manage Memberships',
-			__('Manage Members', 'scsmm'),
+			$page_title,
 			'manage_options',
 			$this->plugin_name,
 			array($this, 'load_member_list_table'),
@@ -175,29 +174,48 @@ class Scsmm_Admin
 			array($this, 'load_admin_membership')
 		);
 	}
-
+	/**
+	 * Call back from menu for the settings page.
+	 *
+	 * @return void
+	 */
 	public function load_admin_settings()
 	{
+		// required call for a wp_table_list prior to display
 		$this->membership_type_list_table->prepare_items();
 		$this->relationship_type_list_table->prepare_items();
 		$this->status_list_table->prepare_items();
 		$this->email_template_list_table->prepare_items();
-		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-settings.php';
+
+		// load the html 
+		require_once PLUGIN_DIR . 'admin/partials/scsmm-admin-settings.php';
 	}
 
-
+	/**
+	 * Call back from admin menu to load the email page
+	 *
+	 * @return void
+	 */
 	public function load_admin_email_page()
 	{
-		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-email.php';
+		require_once PLUGIN_DIR . 'admin/partials/scsmm-admin-email.php';
 	}
-
+	/**
+	 * Call back from the admin menu to load the list of members.
+	 *
+	 * @return void
+	 */
 	public function load_member_list_table()
 	{
 		$this->member_list_table->prepare_items();
 
-		require_once plugin_dir_path(__FILE__) . 'partials/scsmm-admin-member-list.php';
+		require_once PLUGIN_DIR . 'admin/partials/scsmm-admin-member-list.php';
 	}
-
+	/**
+	 * Called from the member_list_table page to load the detailed member application and details form
+	 *
+	 * @return void
+	 */
 	public function load_admin_membership()
 	{
 
@@ -369,17 +387,18 @@ class Scsmm_Admin
 			'id'       => $this->plugin_name . '-email-template-list-help',
 			'title'    => __('Email Templates'),
 			'content'  => '<strong>Email Templates</strong></p>'
-			. '<p>Email templates allow the use of predefined emails to be sent to your members.  These can be part of a '
-			. 'status change workflow, or email created for special events.  The capability allows the use of embedding ' 
-			. 'fields into the email that are then filled in with information from the members. For example, you can have a salutatory '
-			. 'statement <b>Dear {firstname} {lastname}</b>.  The system will fill in first name and last name from the members current '
-			. 'member data. </p>'
-			. '<p>Accepted fields are: firstname, lastname, address1, address2, city, state, zipcode. The codes must be enclosed in braces {}</p>'
-			. '<p>Hovering over a row in the table will display action links that allow you to manage them.</p> '
-			. '<p>You can perform the following actions:</p>'
-			. '<ul><li><p><b>Edit</b> opens the edit form that allows you to change the email information<p></li>'
-			. '<li><p><b>Delete</b> allows you to delete the email.  <b>The is no check to see if it is part of a workflow.</b> '
-			. 'You can also delete multiple status at once by using Bulk Actions.<p></li></ul>'	));
+				. '<p>Email templates allow the use of predefined emails to be sent to your members.  These can be part of a '
+				. 'status change workflow, or email created for special events.  The capability allows the use of embedding '
+				. 'fields into the email that are then filled in with information from the members. For example, you can have a salutatory '
+				. 'statement <b>Dear {firstname} {lastname}</b>.  The system will fill in first name and last name from the members current '
+				. 'member data. </p>'
+				. '<p>Accepted fields are: firstname, lastname, address1, address2, city, state, zipcode. The codes must be enclosed in braces {}</p>'
+				. '<p>Hovering over a row in the table will display action links that allow you to manage them.</p> '
+				. '<p>You can perform the following actions:</p>'
+				. '<ul><li><p><b>Edit</b> opens the edit form that allows you to change the email information<p></li>'
+				. '<li><p><b>Delete</b> allows you to delete the email.  <b>The is no check to see if it is part of a workflow.</b> '
+				. 'You can also delete multiple status at once by using Bulk Actions.<p></li></ul>'
+		));
 
 		//add more help tabs as needed with unique id's
 
@@ -402,16 +421,23 @@ class Scsmm_Admin
 		return $status;
 	}
 
-
+	/**
+	 * Internal function to add a consistent prefix to the plugins tables.
+	 *
+	 * @param [type] $table
+	 * @return void
+	 */
 	private function getTable($table)
 	{
 		global $wpdb;
 		return "{$wpdb->prefix}scsmm_{$table}";
 	}
 
-
-	// handle member registration insert and update
-	// this is an ajax call.
+	/**
+	 * Called from ajax from the membership application page to updates to the application/member details 
+	 *
+	 * @return void
+	 */
 	public function member_application()
 	{
 		//PC::debug(json_encode($_REQUEST));
@@ -588,8 +614,15 @@ class Scsmm_Admin
 			die();
 		}
 	}
-
-	function insertDependant($membership_id, $i)
+	/**
+	 * Called from member application to insert a new dependant.
+	 *
+	 * @param string $membership_id
+	 * @param string $i
+	 * @return void
+	 * @since 1.0.0
+	 */
+	private function insertDependant($membership_id, $i)
 	{
 		global $wpdb;
 		$dependant_table = $this->getTable('dependent_list');
@@ -618,8 +651,15 @@ class Scsmm_Admin
 
 		return $count;
 	}
-
-	function updateDependant($membership_id, $i)
+	/**
+	 * Called from member application to insert a new dependant.
+	 *
+	 * @param string $membership_id
+	 * @param string $i
+	 * @return void
+	 * @since 1.0.0
+	 */
+	private function updateDependant($membership_id, $i)
 	{
 		global $wpdb;
 		$dependant_table = $this->getTable('dependent_list');
@@ -654,7 +694,12 @@ class Scsmm_Admin
 		register_setting($this->plugin_name, $this->plugin_name, array($this, 'validate_settings'));
 	}
 
-	// used to validate the input on the settings page.
+	/**
+	 * callback used to validate the input on the settings page.
+	 *
+	 * @param array $input
+	 * @since 1.0.0
+	 */
 	public function validate_settings($input)
 	{
 		// to do - this needs work
@@ -662,16 +707,47 @@ class Scsmm_Admin
 		$valid = array();
 
 		$valid['email'] = sanitize_email($input['email']);
-		$valid['contact-page'] = (isset($input['contact-page']) && !empty($input['contact-page'])) ? esc_url($input['contact-page']) : false;
-		$valid['contact-redirect-page'] = (isset($input['contact-redirect-page']) && !empty($input['contact-redirect-page'])) ? esc_url($input['contact-redirect-page']) : false;
-		$valid['application-page'] = (isset($input['application-page']) && !empty($input['application-page'])) ? esc_url($input['application-page']) : false;
+		$valid['registration-check-page'] = (isset($input['registration-check-page']) && !empty($input['registration-check-page'])) ? esc_url($input['registration-check-page']) : false;
+		$valid['registration-check-redirect-page'] = (isset($input['registration-check-redirect-page']) && !empty($input['registration-check-redirect-page'])) ? esc_url($input['registration-check-redirect-page']) : false;
+		$valid['registration-expired-redirect-page'] = (isset($input['registration-expired-redirect-page']) && !empty($input['registration-expired-redirect-page'])) ? esc_url($input['registration-expired-redirect-page']) : false;
+		$valid['registration-not-found-redirect-page'] = (isset($input['registration-not-found-redirect-page']) && !empty($input['registration-not-found-redirect-page'])) ? esc_url($input['registration-not-found-redirect-page']) : false;
 		$valid['application-redirect-page'] = (isset($input['application-redirect-page']) && !empty($input['application-redirect-page'])) ? esc_url($input['application-redirect-page']) : false;
 
 		return $valid;
 	}
 
-	// handle errors in the ajax process.
-	private function handleError($msg, $code = 400)
+	/**
+	 * Find the count of new membership applications
+	 *
+	 * @return integer
+	 */
+	private function get_new_application_count()
+	{
+		global $wpdb;
+
+		$sql = "SELECT memberships.* FROM 
+			{$this->getTable('member_list')} as memberships,
+			{$this->getTable('status_types')} as status_types   
+				WHERE membership_types.id=memberships.membership_type_id AND
+					status_types.id=memberships.status_id AND
+					status_types.status_key	= 'new'";
+		$results = $wpdb->get_results($sql, ARRAY_A);
+
+		if (isset($results)) {
+			return count($results);
+		} else {
+			return 0;
+		}
+	}
+	
+	/**
+	 * handle errors in the ajax process.
+	 *
+	 * @param string $msg
+	 * @param integer $code
+	 * @return void
+	 */
+	private function handleError($msg = '', $code = 400)
 	{
 		status_header($code);
 		$results['success'] = false;

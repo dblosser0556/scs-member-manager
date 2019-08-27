@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Provide a public-facing view for the plugin
+ * Provide a public-facing view for the membership application and details
  *
- * This file is used to markup the public-facing aspects of the plugin.
+ * This file is used to markup the membership application and details
  *
  * @link       https://github.com/dblosser0556
  * @since      1.0.0
