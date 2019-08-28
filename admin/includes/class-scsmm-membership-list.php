@@ -455,20 +455,22 @@ class Member_List_Table extends SCSWP_List_Table
         global $wpdb;
         if (isset($_REQUEST['status'])) {
 
-            
+
 
             $id = $_REQUEST['status'];
 
             // check to see if this is a special status
-            $status = $wpdb->get_row("SELECT * FROM 
-                {$this->getTable('status_types')} WHERE id = $id", ARRAY_A
-                );
-            
+            $status = $wpdb->get_row(
+                "SELECT * FROM 
+                {$this->getTable('status_types')} WHERE id = $id",
+                ARRAY_A
+            );
+
             // if active, add a unique identifier to the user and an expiration date time    
             if ($status['status_key'] == 'active') {
-                
+
                 // get the lifetime from options 
-                $options = get_option( PLUGIN_TEXT_DOMAIN);
+                $options = get_option(PLUGIN_TEXT_DOMAIN);
                 $lifetime = $options['lifetime'];
                 if (!isset($lifetime)) {
                     //two weeks
@@ -477,86 +479,92 @@ class Member_List_Table extends SCSWP_List_Table
 
                 // set the expiration date time
                 $expiration_datetime = new DateTime();
-                $expiration_datetime->add(new DateInterval('+'. $lifetime . 'days'));
+                $expiration_datetime->add(new DateInterval('P' . $lifetime . 'D'));
+                $expiration_date = date_format($expiration_datetime, 'Y-m-d H:i:s');
 
-
-                $guid = com_create_guid();
+                $guid = $this->create_guid();
 
                 $count = $wpdb->update(
                     $this->getTable('member_list'),
-                    array('status_id' => $status,
-                        'registation_key' => $guid, 
-                        'registration_key_expiry_date' => date('Y-m-d H:i:s', $expiration_datetime)),
+                    array(
+                        'status_id' => $status['id'],
+                        'registration_key' => $guid,
+                        'registration_key_expiry_date' => $expiration_date
+                    ),
                     array('id' => $_REQUEST['memberid']),
-                    array('%d')
+                    array('%d',
+                        '%s',
+                        '%s')
                 );
-            }  else {
+            } else {
                 $count = $wpdb->update(
                     $this->getTable('member_list'),
-                    array('status_id' => $status),
+                    array('status_id' => $status['id']),
                     array('id' => $_REQUEST['memberid']),
                     array('%d')
                 );
             }
-           
 
-            if (!isset($count)) {
+
+            if (!$count) {
                 $this->errormessage = 'Something went wrong is setting the final status';
+                return;
             }
         }
 
         if (isset($_REQUEST['email'])) {
-            
+
             $id = ($_REQUEST['email']);
             $memberid = ($_REQUEST['memberid']);
-            
+
 
             // get the member
-            $member = $wpdb->get_row( 
-            "SELECT * FROM {$this->getTable('member_list')} 
-                WHERE id = $memberid", ARRAY_A
+            $member = $wpdb->get_row(
+                "SELECT * FROM {$this->getTable('member_list')} 
+                WHERE id = $memberid",
+                ARRAY_A
             );
 
             // get the email template
-            $email = $wpdb->get_row( 
+            $email = $wpdb->get_row(
                 "SELECT * FROM {$this->getTable('email_templates')} 
-                    WHERE id = $id", ARRAY_A);
-             
-            // sender is stored in the options
-             $options = get_option(PLUGIN_TEXT_DOMAIN);
+                    WHERE id = $id",
+                ARRAY_A
+            );
 
-             if (isset($options['email'])) {
-                 $from =  $options['email']; 
-             } else {
-                 $from =  get_option('admin_email');
-             }
+            // sender is stored in the options
+            $options = get_option(PLUGIN_TEXT_DOMAIN);
+
+            if (isset($options['email'])) {
+                $from =  $options['email'];
+            } else {
+                $from =  get_option('admin_email');
+            }
             // get the email addresses
             $to = $member['email'];
-             
-             // get the url of the check registration option
-             $check_page_url = $options['registration-check-page'];
+
+            // get the url of the check registration option
+            $check_page_url = $options['registration-check-page'];
 
 
             // parse the message
             $message = $this->parse_email_template($email, $member, $check_page_url);
 
-            
-            
-           
+
+
+
 
             // Get the message subject 
             // todo store this in email table
             $subject = "Congratlations for Successfully Applying";
-            
+
             // setup  the headers
             $headers[] = 'From: ' . $from;
             $headers[] = 'Cc: ' . $from;
             $headers[] = 'Content-Type: text/html; charset=UTF-8';
-            
+
             // send the email
             wp_mail($to, $subject, $message, $headers);
-            
-
         }
 
         $url = add_query_arg(array('page' => $_REQUEST['page']), admin_url('admin.php'));
@@ -574,21 +582,29 @@ class Member_List_Table extends SCSWP_List_Table
         //todo
     }
 
-    private function parse_email_template($email, $member, $url ) {
-        
+    private function parse_email_template($email, $member, $url)
+    {
+
         // go first through all the keys of the member as they are all allowed values
         $keys = array_keys($member);
         $content = $email['email_text'];
 
-        foreach($keys as $key) {
+        foreach ($keys as $key) {
             $replace = "%" . $key . "%";
             $content = str_replace($replace, $member[$key], $content);
         }
-        $url = '<a href=' . $url . '&key=' . $member['registration_key'] .'>' . __('Register With Us', PLUGIN_TEXT_DOMAIN) . '</a>';
+        $link = esc_url(add_query_arg('key', $member['registration_key'] , $url ));
+        $url = '<a href='. $link . '>' . __('Register With Us', PLUGIN_TEXT_DOMAIN) . '</a>';
 
         $content = str_replace('%registration_url%', $url, $content);
 
         return $content;
+    }
+
+    private function create_guid()
+    {
+        return sprintf('%04X%04X-%04X-%04X-%04X-%04X%04X%04X', mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(16384, 20479), 
+            mt_rand(32768, 49151), mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535));
     }
     /**
      * Stop execution and exit

@@ -26,15 +26,16 @@ function get_member($guid)
 {
     global $wpdb;
     $table_member_list = getTable('member_list');
-    return $wpdb->get_row("SELECT memberships.* as type
-		FROM $table_member_list as memberships AND memberships.registration_key = $guid");
+    $member =  $wpdb->get_row("SELECT memberships.* 
+        FROM $table_member_list as memberships WHERE memberships.registration_key = '$guid'");
+    return $member;
 }
 
 
 
 $options = get_option(PLUGIN_TEXT_DOMAIN);
 
-
+add_action('wpum_before_registration_end', 'wpum_before_registration_end', 10, 2);
 
 if (!isset($_REQUEST['key'])) {
     if (isset($options['registration-not-found-page'])) {
@@ -47,29 +48,43 @@ $member = get_member($_REQUEST['key']);
 
 // is not found
 if (!isset($member)) {
-    if (isset($options['registration-not-found-page'])) {
-        wp_safe_redirect($options['registration-not-found-page']);
+    if (isset($options['registration-not-found-redirect-page'])) {
+        wp_safe_redirect($options['registration-not-found-redirect-page']);
+        return;
+    } else {
+        wp_safe_redirect(get_home_url());
+        return;
     }
 }
 
 $now = date_create();
 
-if ($now > $member->registration_key_expiry_date) {
-    if (isset($options['registration-expired-page'])) {
-        wp_safe_redirect($options['registration-expired-page']);
+if ($now > strtotime($member->registration_key_expiry_date)) {
+    if (isset($options['registration-expired-redirect-page'])) {
+        wp_safe_redirect($options['registration-expired-redirect-page']);
+        return;
+    } else {
+        wp_safe_redirect(get_home_url());
+        return;
     }
 }
 
 // if successful
-if (isset($options['registration-check-redirect-page'])){
+if (isset($options['registration-check-redirect-page'])) {
     // this should be the registation page
-    wp_safe_redirect( $options['registration-check-redirect-page']);
+    wp_safe_redirect($options['registration-check-redirect-page']);
+    return;
 } else {
     wp_safe_redirect(PLUGIN_URL);
+    return;
 }
 
 
-
+function wpum_before_registration_end($new_user_id, $values)
+{
+    //hmmm
+    $see_me = 1;
+}
 
 
 
