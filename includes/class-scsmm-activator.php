@@ -81,7 +81,7 @@ class Scsmm_Activator
 				  name 				varchar(15) NOT NULL,
 				  work_flow_action 	varchar(255),
 				  work_flow_order 	smallint(2) NOT NULL,
-				  status_key 		varchar(15) NOT NULL,
+				  status_key 		varchar(15),
 				  PRIMARY KEY  (id)
 			  ) $charset_collate;";
 

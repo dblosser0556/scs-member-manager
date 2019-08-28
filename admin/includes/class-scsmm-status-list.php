@@ -55,8 +55,9 @@ class Status_List_Table extends SCSWP_List_Table
         echo '<style type="text/css">';
         echo '.wp-list-table .column-cb { width: 5%; }';
         echo '.wp-list-table .column-name { width: 20%; }';
-        echo '.wp-list-table .column-workflow_flow_order { width: 10%; }';
-        echo '.wp-list-table .column-workflow_flow_action { width: 65%; }';
+        echo '.wp-list-table .column-work_flow_order { width: 10%; }';
+        echo '.wp-list-table .column-work_flow_action { width: 50%; }';
+        echo '.wp-list-table .column-status_key { width: 15%; }';
         echo '</style>';
     }
 
@@ -73,7 +74,8 @@ class Status_List_Table extends SCSWP_List_Table
             'cb'                => '<input type = "checkbox" />',
             'name'              => __('Name', $this->plugin_name),
             'work_flow_order'   => __('Work Flow Order', $this->plugin_name),
-            'work_flow_action'  => __('Work Flow Action Script', $this->plugin_name)
+            'work_flow_action'  => __('Work Flow Action Script', $this->plugin_name),
+            'status_key'  => __('Key', $this->plugin_name)
         );
         return $table_columns;
     }
@@ -179,22 +181,22 @@ class Status_List_Table extends SCSWP_List_Table
 
         // row actions to edit item.
         $query_args_edit_member = array(
-            'page'        =>  wp_unslash($_REQUEST['page']),
-            'action'    => 'edit_status',
-            'tab'       => 'status_options',
-            'id'        => absint($item['id']),
-            '_wpnonce'    => wp_create_nonce('edit_type_nonce'),
+            'page'          =>  wp_unslash($_REQUEST['page']),
+            'action'        => 'edit_status',
+            'tab'           => 'status_options',
+            'id'            => absint($item['id']),
+            '_wpnonce'      => wp_create_nonce('edit_type_nonce'),
         );
         $edit_member_link = esc_url(add_query_arg($query_args_edit_member, $admin_page_url));
         $actions['edit_status'] = '<a href="' . $edit_member_link . '">' . __('Edit', $this->plugin_name) . '</a>';
 
         // row actions to edit item.
         $query_args_delete_member = array(
-            'page'        =>  wp_unslash($_REQUEST['page']),
-            'action'    => 'delete_status',
-            'tab'       => 'status_options',
-            'id'        => absint($item['id']),
-            '_wpnonce'    => wp_create_nonce('edit_type_nonce'),
+            'page'          =>  wp_unslash($_REQUEST['page']),
+            'action'        => 'delete_status',
+            'tab'           => 'status_options',
+            'id'            => absint($item['id']),
+            '_wpnonce'      => wp_create_nonce('edit_type_nonce'),
         );
         $delete_member_link = esc_url(add_query_arg($query_args_delete_member, $admin_page_url));
 
@@ -217,6 +219,7 @@ class Status_List_Table extends SCSWP_List_Table
         switch ($column_name) {
             case 'work_flow_order':
             case 'work_flow_action':
+            case 'status_key':
                 return $item[$column_name];
             default:
                 return $item[$column_name];
@@ -233,8 +236,9 @@ class Status_List_Table extends SCSWP_List_Table
          * specify which columns should have the sort icon.	
          */
         $sortable_columns = array(
-            'name' => 'name',
-            'work_flow_order' => 'work_flow_order'
+            'name'              => 'name',
+            'work_flow_order'   => 'work_flow_order',
+            'status_key'        => 'status_key'
         );
         return $sortable_columns;
     }
@@ -378,8 +382,9 @@ class Status_List_Table extends SCSWP_List_Table
         $type = new stdClass();
         $type->id = 0;
         $type->name = '';
-        $type->description = '';
-        $type->cost = '';
+        $type->work_flow_action = '';
+        $type->work_flow_order = '';
+        $type->status_key = '';
         $this->active_type = $type;
 
         $this->can_show_edit = true;
@@ -408,10 +413,12 @@ class Status_List_Table extends SCSWP_List_Table
                 array(
                     'name'              => $_POST['name'],
                     'work_flow_order'   => $_POST['work_flow_order'],
-                    'work_flow_action'  => $_POST['work_flow_action']
+                    'work_flow_action'  => $_POST['work_flow_action'],
+                    'status_key'        => $_POST['status_key']
                 ),
                 array('id' => (int) $_POST['id']),
                 array(
+                    '%s',
                     '%s',
                     '%s',
                     '%s'
@@ -425,9 +432,11 @@ class Status_List_Table extends SCSWP_List_Table
                 array(
                     'name'                      => $_POST['name'],
                     'work_flow_order'           => $_POST['work_flow_order'],
-                    'work_flow_action'          => $_POST['work_flow_action']
+                    'work_flow_action'          => $_POST['work_flow_action'],
+                    'status_key'                => $_POST['status_key']
                 ),
                 array(
+                    '%s',
                     '%s',
                     '%s',
                     '%s'
@@ -514,6 +523,9 @@ class Status_List_Table extends SCSWP_List_Table
                 break;
             case 'work_flow_action':
                 return $this->active_type->work_flow_action;
+                break;
+            case 'status_key':
+                return $this->status_key;
                 break;
             default:
                 return '';

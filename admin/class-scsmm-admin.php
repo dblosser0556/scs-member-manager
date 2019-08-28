@@ -728,8 +728,7 @@ class Scsmm_Admin
 		$sql = "SELECT memberships.* FROM 
 			{$this->getTable('member_list')} as memberships,
 			{$this->getTable('status_types')} as status_types   
-				WHERE membership_types.id=memberships.membership_type_id AND
-					status_types.id=memberships.status_id AND
+				WHERE status_types.id=memberships.status_id AND
 					status_types.status_key	= 'new'";
 		$results = $wpdb->get_results($sql, ARRAY_A);
 
