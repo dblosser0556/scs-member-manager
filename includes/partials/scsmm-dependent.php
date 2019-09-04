@@ -46,7 +46,7 @@
         <div class="form-row">
             <div class="col-md-4 mb-2">
                 <label for="phone">Phone</label>
-                <input type="tel" class="form-control" id="phone" data-row="row<?=$i?>" name="phone<?=$i?>"
+                <input type="tel" class="form-control phone" id="phone" data-row="row<?=$i?>" name="phone<?=$i?>"
                     pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Phone Number"
                     value="<?= $i>0 ? $dependents[$i-1]->phone : '' ?>" <?= $readonly ? 'readonly' : '' ?>/>
                 <small id="phoneHelp" class="form-text text-muted">Like (555) 555-5555.</small>
@@ -56,7 +56,7 @@
             </div>
             <div class="col-md-4 mb-2">
                 <label for="mobile">Mobile</label>
-                <input type="tel" class="form-control" id="mobile" data-row="row<?=$i?>" name="mobile<?=$i?>"
+                <input type="tel" class="form-control phone" id="mobile" data-row="row<?=$i?>" name="mobile<?=$i?>"
                     pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Mobile Number"
                     value="<?= $i>0 ? $dependents[$i-1]->mobile : '' ?>" <?= $readonly ? 'readonly' : '' ?>/>
                 <small id="mobileHelp" class="form-text text-muted">Like (555) 555-5555.</small>

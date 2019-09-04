@@ -454,8 +454,7 @@ class Scsmm_Admin
 			!isset($_REQUEST['dependantCount']) ||
 			!isset($_REQUEST['first_name']) ||
 			!isset($_REQUEST['last_name']) ||
-			!isset($_REQUEST['email']) ||
-			!isset($_REQUEST['username'])
+			!isset($_REQUEST['email']) 
 		) return $this->handleError('Missing Data.');
 
 		// sanitize all the fields.

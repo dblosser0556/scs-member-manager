@@ -122,9 +122,9 @@ class Scsmm_Public {
 		
 		// enqueue the the jQuery plugins  
 		wp_enqueue_script( $this->plugin_name . "bootstrap", PLUGIN_URL . 'includes/js/bootstrap.bundle.min.js', array( 'jquery' ), $this->version, false );
-		wp_enqueue_script( $this->plugin_name . "validation", PLUGIN_URL .  'public/js/jquery.validate.min.js',  array( 'jquery' ), $this->version, false );
-		wp_enqueue_script( $this->plugin_name . "validation-add", PLUGIN_URL . 'public/js/additional-methods.min.js', array( 'jquery' ), $this->version, false );
-		wp_enqueue_script( $this->plugin_name . "masked-input", PLUGIN_URL .  'public/js/jquery.maskedinput.min.js',  array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . "validation", PLUGIN_URL .  'includes/js/jquery.validate.min.js',  array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . "validation-add", PLUGIN_URL . 'includes/js/additional-methods.min.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . "masked-input", PLUGIN_URL .  'includes/js/jquery.maskedinput.min.js',  array( 'jquery' ), $this->version, false );
 	}
 
 	

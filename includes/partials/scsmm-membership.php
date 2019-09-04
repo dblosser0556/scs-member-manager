@@ -199,32 +199,21 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
             </div>
         </div>
         <div class="form-row">
-            <div class="col-md-4 mb-2">
+            <div class="col-md-6 mb-3">
                 <label for="firstName">First name*</label>
                 <input type="text" class="form-control" id="firstName" name="first_name" placeholder="First name" value="<?= $member->first_name ?>" required <?= $readonly ? 'readonly' : '' ?> />
                 <div class="invalid-feedback">
                     Please provide a first name.
                 </div>
             </div>
-            <div class="col-md-4 mb-2">
+            <div class="col-md-6 mb-3">
                 <label for="lastName">Last name*</label>
                 <input type="text" class="form-control" id="lastName" name="last_name" placeholder="Last name" value="<?= $member->last_name ?>" required <?= $readonly ? 'readonly' : '' ?> />
                 <div class="invalid-feedback">
                     Please provide a last name.
                 </div>
             </div>
-            <div class="col-md-4 mb-2">
-                <label for="username">Username*</label>
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text" id="inputGroupPrepend">@</span>
-                    </div>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="Username" value="<?= $member->username ?>" aria-describedby="inputGroupPrepend" required <?= $readonly ? 'readonly' : '' ?> />
-                    <div class="invalid-feedback">
-                        Please choose a username.
-                    </div>
-                </div>
-            </div>
+            
         </div>
         <div class="form-row">
             <div class="col-md-12 mb-6">
@@ -315,7 +304,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
             </div>
             <div class="col-md-3 mb-3">
                 <label for="zipcode">Zip*</label>
-                <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Zip" pattern="(\d{5}([\-]\d{4})?)" value="<?= $member->zipcode ?>" required <?= $readonly ? 'readonly' : '' ?>>
+                <input type="text" class="form-control zipcode" id="zipcode" name="zipcode" placeholder="Zip" pattern="(\d{5}([\-]\d{4})?)" value="<?= $member->zipcode ?>" required <?= $readonly ? 'readonly' : '' ?>>
                 <div class="invalid-feedback">
                     Please provide a valid zip.
                 </div>
@@ -324,7 +313,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
         <div class="form-row">
             <div class="col-md-3 mb-2">
                 <label for="phone">Phone</label>
-                <input type="tel" class="form-control" id="phone" name="phone" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Phone Number" value="<?= $member->phone ?>" <?= $readonly ? 'readonly' : '' ?> />
+                <input type="tel" class="form-control phone" id="phone" name="phone" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Phone Number" value="<?= $member->phone ?>" <?= $readonly ? 'readonly' : '' ?> />
                 <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small>
                 <div class="invalid-feedback">
                     Please provide a valid phone number.
@@ -332,7 +321,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
             </div>
             <div class="col-md-3 mb-2">
                 <label for="mobile">Mobile</label>
-                <input type="tel" class="form-control" id="mobile" name="mobile" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Mobile Number" value="<?= $member->mobile ?>" <?= $readonly ? 'readonly' : '' ?> />
+                <input type="tel" class="form-control phone" id="mobile" name="mobile" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Mobile Number" value="<?= $member->mobile ?>" <?= $readonly ? 'readonly' : '' ?> />
                 <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small>
                 <div class="invalid-feedback">
                     Please provide a valid mobile.

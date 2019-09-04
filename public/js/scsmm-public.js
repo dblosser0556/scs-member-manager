@@ -32,6 +32,7 @@
 
 		//input masks
 		$("input.phone").mask("(999) 999-9999");
+		$("input.zipcode").mask("99999");
 
 		// set up the validation for the registration form.
 		$("#registration_form").validate({
