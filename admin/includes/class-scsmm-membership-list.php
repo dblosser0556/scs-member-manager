@@ -466,46 +466,47 @@ class Member_List_Table extends SCSWP_List_Table
                 ARRAY_A
             );
 
+            // get the member 
+            $member = $this->fetch_member($_REQUEST['memberid']);
+
+
+            // sender is stored in the options
+            $options = get_option(PLUGIN_TEXT_DOMAIN);
+
             // if active, add a unique identifier to the user and an expiration date time    
             if ($status['status_key'] == 'active') {
 
-                // get the lifetime from options 
-                $options = get_option(PLUGIN_TEXT_DOMAIN);
-                $lifetime = $options['lifetime'];
-                if (!isset($lifetime)) {
-                    //two weeks
-                    $lifetime = 14;
+
+
+
+                //get the member number
+                $membership_number = $this->get_next_membership_number($member['membership_type_id']);
+
+                // get the list of dependents for this member id
+                $dependents = $this->fetch_dependents($_REQUEST['memberid']);
+
+                //add the registration requests to the registration list
+                $count = $this->add_registration($member['id'], 0, $member['first_name'], $member['last_name'], $member['email']);
+
+                foreach ($dependents as $dependent) {
+                    $this->add_registration($member['id'], $dependent['id'], $dependent['first_name'], $dependent['last_name'], $dependent['email']);
                 }
 
-                // set the expiration date time
-                $expiration_datetime = new DateTime();
-                $expiration_datetime->add(new DateInterval('P' . $lifetime . 'D'));
-                $expiration_date = date_format($expiration_datetime, 'Y-m-d H:i:s');
+                // update the membership list with the next status
+                $member['status_id'] = $status['id'];
+                $member['membership_number'] = $membership_number;
+                $member['join_date'] = date_format( date_create(), 'Y-m-d H:i:s');
 
-                $guid = $this->create_guid();
 
-                $count = $wpdb->update(
-                    $this->getTable('member_list'),
-                    array(
-                        'status_id' => $status['id'],
-                        'registration_key' => $guid,
-                        'registration_key_expiry_date' => $expiration_date
-                    ),
-                    array('id' => $_REQUEST['memberid']),
-                    array('%d',
-                        '%s',
-                        '%s')
-                );
             } else {
-                $count = $wpdb->update(
-                    $this->getTable('member_list'),
-                    array('status_id' => $status['id']),
-                    array('id' => $_REQUEST['memberid']),
-                    array('%d')
-                );
+                $member['status_id'] = $status['id'];
             }
 
-
+            $count = $wpdb->update(
+                $this->getTable('member_list'),
+                $member,
+                array('id' => $_REQUEST['memberid'])
+            );
             if (!$count) {
                 $this->errormessage = 'Something went wrong is setting the final status';
                 return;
@@ -515,58 +516,32 @@ class Member_List_Table extends SCSWP_List_Table
         if (isset($_REQUEST['email'])) {
 
             $id = ($_REQUEST['email']);
-            $memberid = ($_REQUEST['memberid']);
+            $member_id = ($_REQUEST['memberid']);
 
 
             // get the member
-            $member = $wpdb->get_row(
-                "SELECT * FROM {$this->getTable('member_list')} 
-                WHERE id = $memberid",
-                ARRAY_A
-            );
+            $member = $this->fetch_member($member_id);
 
-            // get the email template
-            $email = $wpdb->get_row(
-                "SELECT * FROM {$this->getTable('email_templates')} 
-                    WHERE id = $id",
-                ARRAY_A
-            );
+            $this->send_email($id, $member);
 
-            // sender is stored in the options
-            $options = get_option(PLUGIN_TEXT_DOMAIN);
 
-            if (isset($options['email'])) {
-                $from =  $options['email'];
-            } else {
-                $from =  get_option('admin_email');
-            }
-            // get the email addresses
-            $to = $member['email'];
+        }
+
+        if (isset($_REQUEST['reg-email'])) { 
+
+            $id = ($_REQUEST['reg-email']);
+            $member_id = ($_REQUEST['memberid']);
+
+            $members = $this->fetch_registrations($member_id);
 
             // get the url of the check registration option
             $check_page_url = $options['registration-check-page'];
-
-
-            // parse the message
-            $message = $this->parse_email_template($email, $member, $check_page_url);
-
-
-
-
-
-            // Get the message subject 
-            // todo store this in email table
-            $subject = "Congratlations for Successfully Applying";
-
-            // setup  the headers
-            $headers[] = 'From: ' . $from;
-            $headers[] = 'Cc: ' . $from;
-            $headers[] = 'Content-Type: text/html; charset=UTF-8';
-
-            // send the email
-            wp_mail($to, $subject, $message, $headers);
+            
+            foreach($members as $member){
+                $this->send_email($id, $member, $check_page_url);
+            }
         }
-
+        
         $url = add_query_arg(array('page' => $_REQUEST['page']), admin_url('admin.php'));
         wp_safe_redirect($url);
     }
@@ -582,7 +557,51 @@ class Member_List_Table extends SCSWP_List_Table
         //todo
     }
 
-    private function parse_email_template($email, $member, $url)
+    private function send_email($email_id, $member, $check_page_url = '')
+    {
+        global $wpdb;
+        
+        // get the email template
+        $email = $wpdb->get_row(
+            "SELECT * FROM {$this->getTable('email_templates')} 
+            WHERE id = $email_id",
+            ARRAY_A
+        );
+
+        // parse the message
+        $message = $this->parse_email_template($email, $member, $check_page_url);
+        $options = get_option(PLUGIN_TEXT_DOMAIN);
+
+        if (isset($options['email'])) {
+            $from =  $options['email'];
+        } else {
+            $from =  get_option('admin_email');
+        }
+        // get the email addresses
+        $to = $member['email'];
+
+        // Get the message subject 
+        // todo store this in email table
+        $subject = $email['subject'];
+
+        // setup  the headers
+        $headers[] = 'From: ' . $from;
+        $headers[] = 'Cc: ' . $from;
+        $headers[] = 'Content-Type: text/html; charset=UTF-8';
+
+        // send the email
+        wp_mail($to, $subject, $message, $headers);
+    }
+
+    /**
+     * Parse the email template to replace variables with text from database
+     *
+     * @param array $email
+     * @param array $member
+     * @param string $url
+     * @return string 
+     */
+    private function parse_email_template($email, $member, $url = '')
     {
 
         // go first through all the keys of the member as they are all allowed values
@@ -590,22 +609,164 @@ class Member_List_Table extends SCSWP_List_Table
         $content = $email['email_text'];
 
         foreach ($keys as $key) {
-            $replace = "%" . $key . "%";
-            $content = str_replace($replace, $member[$key], $content);
+            $replace = "/\{" . $key . "\}/";
+            $content = preg_replace($replace, $member[$key], $content);
         }
-        $link = esc_url(add_query_arg('key', $member['registration_key'] , $url ));
-        $url = '<a href='. $link . '>' . __('Register With Us', PLUGIN_TEXT_DOMAIN) . '</a>';
 
-        $content = str_replace('%registration_url%', $url, $content);
+        if (!empty($url)) {
+            $link = esc_url(add_query_arg('key', $member['registration_key'], $url));
+            $url = '<a href=' . $link . '>' . __('Register With Us', PLUGIN_TEXT_DOMAIN) . '</a>';
 
+            $content = preg_replace('/\{registration_url\}/', $url, $content);
+        }
         return $content;
     }
 
+    /**
+     * Create guid
+     *
+     * @return string 
+     */
     private function create_guid()
     {
-        return sprintf('%04X%04X-%04X-%04X-%04X-%04X%04X%04X', mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(16384, 20479), 
-            mt_rand(32768, 49151), mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535));
+        return sprintf(
+            '%04X%04X-%04X-%04X-%04X-%04X%04X%04X',
+            mt_rand(0, 65535),
+            mt_rand(0, 65535),
+            mt_rand(0, 65535),
+            mt_rand(16384, 20479),
+            mt_rand(32768, 49151),
+            mt_rand(0, 65535),
+            mt_rand(0, 65535),
+            mt_rand(0, 65535)
+        );
     }
+
+
+    /**
+     * Get the list of dependents from the database for a member
+     *
+     * @param int $member_id
+     * @return array 
+     */
+    private function fetch_dependents($member_id)
+    {
+        global $wpdb;
+        $sql = "SELECT * FROM 
+            {$this->getTable('dependent_list')} 
+            WHERE membership_id = $member_id 
+            AND email IS NOT NULL ";
+
+
+
+        return $wpdb->get_results($sql, ARRAY_A);
+    }
+
+    /**
+     * Get the set of registrations for member id 
+     *
+     * @param int $member_id
+     * @return void
+     */
+    private function fetch_registrations($member_id) {
+         global $wpdb;
+
+         $sql = "SELECT * FROM 
+            {$this->getTable('registration_list')} 
+            WHERE membership_id = $member_id";
+        
+        return $wpdb->get_results($sql, ARRAY_A);
+    }
+
+    /**
+     * Find the member from the database
+     *
+     * @param int $member_id
+     * @return array
+     */
+    private function fetch_member($member_id)
+    {
+        global $wpdb;
+
+        return $wpdb->get_row(
+            "SELECT * FROM {$this->getTable('member_list')} 
+            WHERE id = $member_id",
+            ARRAY_A
+        );
+    }
+
+    private function get_next_membership_number($membership_type_id)
+    {
+        global $wpdb;
+
+        $membership_type = $wpdb->get_row(
+            "SELECT * FROM {$this->getTable('membership_types')}
+        WHERE id = $membership_type_id",
+            ARRAY_A
+        );
+
+        $next_number = $membership_type['next_number'] + $membership_type['increment'];
+        $membership_number = $membership_type['short_name'] . $next_number;
+
+        // update the membership number;
+
+
+        $count = $wpdb->update(
+            $this->getTable('membership_types'),
+            array(
+                'next_number' => $next_number
+            ),
+            array('id' => $membership_type_id),
+            array(
+                '%d'
+            )
+        );
+
+        if (!$count) {
+            // we have a real problem
+        }
+
+        return $membership_number;
+    }
+
+    private function add_registration($member_id, $dependent_id, $first_name, $last_name, $email)
+    {
+        global $wpdb;
+
+        $options = get_option(PLUGIN_TEXT_DOMAIN);
+
+        // get the lifetime from options 
+        $lifetime = 14;
+        if (isset($options['lifetime'])) {
+            //two weeks
+            $lifetime = $options['lifetime'];    
+        }
+
+
+        // set the expiration date time
+        $expiration_datetime = new DateTime();
+        $expiration_datetime->add(new DateInterval('P' . $lifetime . 'D'));
+        $expiration_date = date_format($expiration_datetime, 'Y-m-d H:i:s');
+
+
+        $record = array(
+            'membership_id'                 => $member_id,
+            'dependent_id'                  => $dependent_id,
+            'email'                         => $email,
+            'first_name'                    => $first_name,
+            'last_name'                     => $last_name,
+            'registration_key'              => $this->create_guid(),
+            'registration_key_expiry_date'  => $expiration_date
+        );
+
+        $count = $wpdb->insert(
+            $this->getTable('registration_list'),
+            $record
+        );
+
+        return $count;
+    }
+
     /**
      * Stop execution and exit
      *

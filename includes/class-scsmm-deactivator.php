@@ -49,14 +49,18 @@ class Scsmm_Deactivator
         );
 
 
-        foreach($titles as $title) {
-            $page = get_page_by_title( $title);
+        foreach ($titles as $title) {
+            $page = get_page_by_title($title);
             if (isset($page)) {
                 wp_delete_post($page->ID, true);
             }
         }
 
 
+        // registration table
+        $table_name = $wpdb->prefix . 'scsmm_registration_list';
+        $sql = "DROP TABLE IF EXISTS $table_name";
+        $wpdb->query($sql);
 
         // dependents table
         $table_name = $wpdb->prefix . 'scsmm_dependent_list';

@@ -45,25 +45,40 @@ class Scsmm_Activator
 
 		self::create_mail_template_table();
 
+		self::create_member_registration_table();
+
+		self::create_contact_list_table();
+
 		// add default data 
 		self::add_default_relationship_types();
 		self::add_default_membership_types();
+		
 		// adding emails returns the list of email ids
 		$emails = self::add_default_mail_items();
+		
 		// add the status types with one email workflow
 		self::add_default_status_types($emails['application-approved']);
-		
+
 
 		// store the current database version for future upgrades
 		add_option(PLUGIN_TEXT_DOMAIN . '_db_version', PLUGIN_DB_VERSION);
 
-		// add some default page redirects
+		// add some default page redirects and save to the options
 		self::add_default_pages();
 
-		// add default mail items
-	
 	}
 
+	private static function get_page_id_by_title($title) {
+
+		$page = get_page_by_title( $title);
+	
+		if (is_page($page)) {
+			return $page->ID;
+		} else {
+			return '';
+		}
+
+	}
 	private static function create_status_table()
 	{
 		// create tables
@@ -127,12 +142,14 @@ class Scsmm_Activator
 		$table_membership_types = $wpdb->prefix . 'scsmm_membership_types';
 		$sql = "CREATE TABLE $table_membership_types (
 					  id mediumint(9) NOT NULL AUTO_INCREMENT,
-					  name varchar(20) NULL,
+					  name varchar(20) NOT NULL,
 					  description varchar(1024) NULL,
 					  cost varchar(1024) NULL,
-					  PRIMARY KEY  (id)
+					  short_name varchar(5) NOT NULL,
+					  next_number mediumint(9) NOT NULL,
+					  increment tinyint(2) NOT NULL,
+ 					  PRIMARY KEY  (id)
 				  ) $charset_collate;";
-		dbDelta($sql);
 
 
 
@@ -161,11 +178,8 @@ class Scsmm_Activator
 		// member_list table
 		$table_member_list = $wpdb->prefix . 'scsmm_member_list';
 		$sql = "CREATE TABLE $table_member_list (
-				id mediumint NOT NULL AUTO_INCREMENT,
-				membership_number varchar(50),
-				registration_key varchar(255),
-				registration_key_expiry_date datetime,
-				username varchar(50) NOT NULL,
+				id mediumint(9) NOT NULL AUTO_INCREMENT,
+				membership_number varchar(50),		
 				first_name varchar(75) NOT NULL,
 				last_name varchar(75) NOT NULL,
 				address1 varchar(255) NOT NULL,
@@ -178,12 +192,72 @@ class Scsmm_Activator
 				employer varchar(255),
 				email varchar(75),
 				notes varchar(1024),
-				membership_type_id mediumint,
-				status_id mediumint,
+				membership_type_id mediumint(9),
+				status_id mediumint(9),
 				join_date datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
 				FOREIGN KEY (membership_type_id) REFERENCES {$table_membership_types}(id) ON DELETE CASCADE,
 				FOREIGN KEY (status_id) REFERENCES {$table_status_types}(id) ON DELETE CASCADE,
 				PRIMARY KEY  (id)
+			) $charset_collate;";
+
+
+		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+
+		dbDelta($sql);
+	}
+
+	private static function create_member_registration_table()
+	{
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		if (!function_exists('dbDelta')) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
+
+		$table_member_list = $wpdb->prefix . 'scsmm_member_list';
+		$table_registration_list = $wpdb->prefix . 'scsmm_registration_list';
+
+		$sql = "CREATE TABLE $table_registration_list (
+			id mediumint(9) NOT NULL AUTO_INCREMENT,
+			membership_id  mediumint(9) NOT NULL,
+			dependent_id mediumint(9) NULL,
+			first_name varchar(75) NOT NULL,
+			last_name varchar(75) NOT NULL,
+			email varchar(255) NOT NULL,
+			registration_key varchar(255),
+			registration_key_expiry_date datetime,
+			username varchar(50) NULL,
+			user_id mediumint(9)  NULL,
+			FOREIGN KEY (membership_id) REFERENCES {$table_member_list}(id) ON DELETE CASCADE,
+			PRIMARY KEY  (id)
+			) $charset_collate;";
+
+
+		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+
+		dbDelta($sql);
+	}
+
+	private static function create_contact_list_table()
+	{
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		if (!function_exists('dbDelta')) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
+
+		$table_contact_list = $wpdb->prefix . 'scsmm_contact_list';
+
+		$sql = "CREATE TABLE $table_registration_list (
+			id mediumint(9) NOT NULL AUTO_INCREMENT,
+			last_name varchar(75) NOT NULL,
+			email varchar(255) NOT NULL,
+			comments text NULL,
+			PRIMARY KEY  (id)
 			) $charset_collate;";
 
 
@@ -250,6 +324,7 @@ class Scsmm_Activator
 						recipient_desc varchar(255) NOT NULL,
 						sender_desc varchar(255) NOT NULL,
 						sender_email varchar(255) NOT NULL,
+						subject varchar(255) NOT NULL,
 						email_text text,
 						PRIMARY KEY  (id)
 					  ) $charset_collate;";
@@ -292,14 +367,14 @@ class Scsmm_Activator
 	{
 		global $wpdb;
 
-		
+
 
 		$table_name = $wpdb->prefix . 'scsmm_status_types';
 		$wpdb->insert(
 			$table_name,
 			array(
 				'name' 				=> 'Applied',
-				'work_flow_action' 	=> 'Activate:final_status=2,email=' . $registration_email .';Disable:final_status=3',
+				'work_flow_action' 	=> 'Activate:status=2,email=' . $registration_email . ';Disable:status=3',
 				'work_flow_order'	=> '1',
 				'status_key'		=> 'new'
 			)
@@ -309,7 +384,7 @@ class Scsmm_Activator
 			$table_name,
 			array(
 				'name' 				=> 'Active',
-				'work_flow_action' 	=> 'Disable:final_status=3',
+				'work_flow_action' 	=> 'Disable:status=3',
 				'work_flow_order'	=> '2',
 				'status_key'		=> 'active'
 			)
@@ -336,7 +411,10 @@ class Scsmm_Activator
 			array(
 				'name' 				=> 'Default',
 				'description'	 	=> 'Default type should be deleted on configuration',
-				'cost'				=> ''
+				'cost'				=> '',
+				'short_name'		=> 'D',
+				'next_number'		=> 1000, 
+				'increment'			=> 1
 			)
 		);
 	}
@@ -350,6 +428,8 @@ class Scsmm_Activator
 			'content' => '[scsmm-registration-check]',
 			'option'	=> 'registration-check-page'
 		);
+
+		
 
 		$pages[] = array(
 			'title' => 'Registration Check Redirect',
@@ -376,10 +456,32 @@ class Scsmm_Activator
 			'option'	=> 'application-redirect-page'
 		);
 
+		$pages[] = array(
+			'title' => 'Contact Us',
+			'content' => '[scsmm-contact-form]',
+			'option'	=> 'contact-page'
+		);
+
+		$pages[] = array(
+			'title' => 'Thanks for Contacting Us',
+			'content'	=> 'Thanks for contacting us.  We will be back with you shortly',
+			'option'	=> 'contact-success-redirect-page'
+		);
+
+		$pages[] = array(
+			'title' => 'Thanks for Registering With Us',
+			'content'	=> 'Thanks for registering with us.',
+			'option'	=> 'register-success-redirect-page'
+		);
+
 		foreach ($pages as $page) {
 			$new_page_id = self::add_page($page);
 			$options[$page['option']]  = get_permalink($new_page_id);
 		}
+
+		// add the none page option defaults
+		$options['email'] = '';
+		$options['lifetime'] = '14';
 
 		add_option(PLUGIN_TEXT_DOMAIN, $options);
 	}
@@ -423,26 +525,28 @@ class Scsmm_Activator
 		$wpdb->insert(
 			$table_name,
 			array(
-				'name' 				=> 'Application',
-				'recipient_desc' 	=> 'New Applicant',
-				'sender_desc'		=> 'Application Committee',
-				'sender_email' 		=> '',
-				'email_text'		=> '<p>Dear {firstname} {lastname}:</p>'
+				'name' 					=> 'Application',
+				'recipient_desc' 		=> 'New Applicant',
+				'sender_desc'			=> 'Application Committee',
+				'sender_email' 			=> '',
+				'subject'				=> 'Thanks for applying',
+				'email_text'			=> '<p>Dear {first_name} {last_name}:</p>'
 					. '<p>Thanks for applying.  We will be back to you shortly.</p>'
 					. '<p>Registration Committee</p>'
 			)
 		);
 		$emails['application'] = $wpdb->insert_id;
-		
-		
+
+
 		$wpdb->insert(
 			$table_name,
 			array(
-				'name' 				=> 'Application Approved',
-				'recipient_desc' 	=> 'New Applicant',
-				'sender_desc'		=> 'Application Committee',
-				'sender_email' 		=> '',
-				'email_text'		=> '<p>Dear {firstname} {lastname}:</p>'
+				'name' 					=> 'Application Approved',
+				'recipient_desc' 		=> 'New Applicant',
+				'sender_desc'			=> 'Application Committee',
+				'sender_email' 			=> '',
+				'subject'				=> 'Application Accepted',
+				'email_text'			=> '<p>Dear {first_name} {last_name}:</p>'
 					. '<p><strong>Congratulations your application has been approved.</strong></p>'
 					. '<p>To register on our web site please use the link below.</p>'
 					. '{registration_url}'

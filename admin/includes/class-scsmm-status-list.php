@@ -525,7 +525,7 @@ class Status_List_Table extends SCSWP_List_Table
                 return $this->active_type->work_flow_action;
                 break;
             case 'status_key':
-                return $this->status_key;
+                return $this->active_type->status_key;
                 break;
             default:
                 return '';

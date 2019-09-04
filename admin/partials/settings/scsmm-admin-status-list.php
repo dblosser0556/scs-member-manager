@@ -97,11 +97,11 @@ $cancel_status_link = esc_url(add_query_arg($query_args_edit_cancel, admin_url('
                         <input style="width: 100%" type="text" name="work_flow_action" id="work_flow_action" value="<?= $this->status_list_table->get_active_type('work_flow_action'); ?>">
                     </td>
                     <td class="status_key column-status_key">
-                        <select id="relationship_id" style="width: 100;">
-                            <option value="" <?= $this->status_list_table->get_active_type('status_key') == '' ? 'selected="selected"' : '' ; ?>><?= _e('None', PLUGIN_TEXT_DOMAIN) ?></option>
-                            <option value="new" <?= $this->status_list_table->get_active_type('status_key') == 'new' ? 'selected="selected"' : '' ; ?>> <?= _e('New', PLUGIN_TEXT_DOMAIN) ?></option>
-                            <option value="active" <?= $this->status_list_table->get_active_type('status_key') == 'active' ? 'selected="selected"' : '' ; ?>> ><?= _e('Active', PLUGIN_TEXT_DOMAIN) ?></option>
-                            <option value="inactive" <?= $this->status_list_table->get_active_type('status_key') == 'inactive' ? 'selected="selected"' : '' ; ?>> ><?= _e('InActive', PLUGIN_TEXT_DOMAIN) ?></option>
+                        <select id="relationship_id" style="width: 100;" name="status_key">
+                            <option value="" <?= $this->status_list_table->get_active_type('status_key') == '' ? 'selected="selected"' : '' ; ?> ><?= _e('None', PLUGIN_TEXT_DOMAIN) ?></option>
+                            <option value="new" <?= $this->status_list_table->get_active_type('status_key') == 'new' ? 'selected="selected"' : '' ; ?> ><?= _e('New', PLUGIN_TEXT_DOMAIN) ?></option>
+                            <option value="active" <?= $this->status_list_table->get_active_type('status_key') == 'active' ? 'selected="selected"' : '' ; ?> ><?= _e('Active', PLUGIN_TEXT_DOMAIN) ?></option>
+                            <option value="inactive" <?= $this->status_list_table->get_active_type('status_key') == 'inactive' ? 'selected="selected"' : '' ; ?> ><?= _e('InActive', PLUGIN_TEXT_DOMAIN) ?></option>
                         </select>
 
                     </td>

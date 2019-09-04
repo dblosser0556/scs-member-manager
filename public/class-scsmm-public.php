@@ -73,9 +73,9 @@ class Scsmm_Public {
 		 * class.
 		 */
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/scsmm-public.css', array(), date('h:i:s'), 'all' );
+		wp_enqueue_style( $this->plugin_name, PLUGIN_URL . 'public/css/scsmm-public.css', array(), date('h:i:s'), 'all' );
 		// include bootstrap from common directory
-		wp_enqueue_style( $this->plugin_name . '-load-bs',  plugins_url( 'includes/css/bootstrap.min.css', __DIR__ ) , array(), $this->version, 'all' );
+		wp_enqueue_style( $this->plugin_name . '-load-bs',  PLUGIN_URL . 'includes/css/bootstrap.min.css' , array(), $this->version, 'all' );
 	}
 
 	/**
@@ -97,9 +97,34 @@ class Scsmm_Public {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/scsmm-public.js', array( 'jquery' ), date('h:i:s'), false );
+		// add the custom script
+		wp_enqueue_script( $this->plugin_name, PLUGIN_URL . 'public/js/scsmm-public.js', array( 'jquery' ), date('h:i:s'), false );
 		
-		wp_enqueue_script( $this->plugin_name . "bootstrap", plugins_url( 'includes/js/bootstrap.bundle.min.js', __DIR__ ) , array( 'jquery' ), $this->version, false );
+		// add variables 
+		$options = get_option( PLUGIN_TEXT_DOMAIN);
+
+		if(isset($options['register-success-redirect-page']) ) {
+			$register_success_redirect = $options['registration-success-redirect-page'];
+		} else {
+			$register_success_redirect = wp_login_url();
+		}
+
+		if(isset($options['contact-success-redirect-page']) ) {
+			$contact_success_redirect = $options['contact-success-redirect-page'];
+		} else {
+			$contact_success_redirect = home_url();
+		}
+
+		$script = 'register_success_redirect = ' . json_encode($register_success_redirect) . '; ';
+		$script = 'contact_success_redirect = ' . json_encode($contact_success_redirect) . '; ';
+		wp_add_inline_script($this->plugin_name, $script, 'before'); 
+		
+		
+		// enqueue the the jQuery plugins  
+		wp_enqueue_script( $this->plugin_name . "bootstrap", PLUGIN_URL . 'includes/js/bootstrap.bundle.min.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . "validation", PLUGIN_URL .  'public/js/jquery.validate.min.js',  array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . "validation-add", PLUGIN_URL . 'public/js/additional-methods.min.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . "masked-input", PLUGIN_URL .  'public/js/jquery.maskedinput.min.js',  array( 'jquery' ), $this->version, false );
 	}
 
 	
@@ -113,5 +138,12 @@ class Scsmm_Public {
 		ob_start();
 		include_once( 'partials/'.$this->plugin_name.'-public-registration-check.php' );
 		return ob_get_clean();
+	}
+
+	public function contact_form_shortcode(  $atts, $content = null ) {
+		ob_start();
+		include_once( 'partials/'.$this->plugin_name.'-public-contact-form.php' );
+		return ob_get_clean();
+
 	}
 }

@@ -390,9 +390,9 @@ class Scsmm_Admin
 				. '<p>Email templates allow the use of predefined emails to be sent to your members.  These can be part of a '
 				. 'status change workflow, or email created for special events.  The capability allows the use of embedding '
 				. 'fields into the email that are then filled in with information from the members. For example, you can have a salutatory '
-				. 'statement <b>Dear {firstname} {lastname}</b>.  The system will fill in first name and last name from the members current '
+				. 'statement <b>Dear {first_name} {last_name}</b>.  The system will fill in first name and last name from the members current '
 				. 'member data. </p>'
-				. '<p>Accepted fields are: firstname, lastname, address1, address2, city, state, zipcode. The codes must be enclosed in braces {}</p>'
+				. '<p>Accepted fields are: first_name, last_name, address1, address2, city, state, zipcode. The codes must be enclosed in braces {}</p>'
 				. '<p>Hovering over a row in the table will display action links that allow you to manage them.</p> '
 				. '<p>You can perform the following actions:</p>'
 				. '<ul><li><p><b>Edit</b> opens the edit form that allows you to change the email information<p></li>'
@@ -424,7 +424,7 @@ class Scsmm_Admin
 	/**
 	 * Internal function to add a consistent prefix to the plugins tables.
 	 *
-	 * @param [type] $table
+	 * @param string $table
 	 * @return void
 	 */
 	private function getTable($table)
@@ -445,7 +445,7 @@ class Scsmm_Admin
 
 		// check to ensure we know the requester
 		if (!check_ajax_referer('scs-member-check-string', 'security')) {
-			return $this->handleError('Illegal Request');
+			return $this->handleError('Illegal Request', Requests_Exception_HTTP_401);
 		}
 
 		// make sure all of the required fields are sent.
@@ -474,7 +474,6 @@ class Scsmm_Admin
 			$count = $wpdb->insert(
 				$member_table,
 				array(
-					'username' => sanitize_text_field($_REQUEST['username']),
 					'first_name' => $first_name,
 					'last_name' => $last_name,
 					'address1' => sanitize_text_field($_REQUEST['address1']),
@@ -492,7 +491,6 @@ class Scsmm_Admin
 					'join_date' => sanitize_text_field($_REQUEST['join_date'])
 				),
 				array(
-					'%s',
 					'%s',
 					'%s',
 					'%s',
@@ -558,7 +556,6 @@ class Scsmm_Admin
 			$count = $wpdb->update(
 				$member_table,
 				array(
-					'username' => sanitize_text_field($_REQUEST['username']),
 					'first_name' => $first_name,
 					'last_name' => $last_name,
 					'address1' => sanitize_text_field($_REQUEST['address1']),
@@ -577,7 +574,6 @@ class Scsmm_Admin
 				),
 				array('id' => $_REQUEST['id']),
 				array(
-					'%s',
 					'%s',
 					'%s',
 					'%s',
@@ -687,7 +683,231 @@ class Scsmm_Admin
 			)
 		);
 	}
+	/**
+	 * Ajax call from the register member short code to add a new member.
+	 * 
+	 * 
+	 * @return void
+	 */
+	public function register_member()
+	{
+		// check to ensure we know the requester
+		if (!check_ajax_referer('scs-registration-check-string', 'security')) {
+			return $this->handleError('Illegal Request', Requests_Exception_HTTP_401);
+		}
 
+
+		$registration_id = 		sanitize_text_field($_POST['registration_id']);
+		$username   =   		sanitize_user($_POST['username']);
+		$password   =   		$_POST['password'];
+		$email      =   		sanitize_email($_POST['email']);
+		$first_name =   		sanitize_text_field($_POST['first_name']);
+		$last_name  =   		sanitize_text_field($_POST['last_name']);
+		$membership_number = 	sanitize_text_field($_POST['membership_number']);
+
+		$reg_errors = $this->registration_validation($username, $password, $email, $first_name, $last_name, $membership_number);
+
+		if (count($reg_errors->errors) > 0) {
+			$message = "";
+			foreach ($reg_errors->get_error_messages() as $error_message) {
+				$message .=  $error_message . '<br>';
+			}
+			$this->handleError($message, '400');
+		}
+
+		if ($this->complete_registration($registration_id, $username, $password, $email, $first_name, $last_name, $membership_number)) {
+			$results['success'] = true;
+			$results['msg'] = 'Registration details successfully added.';
+			print_r(json_encode($results));
+			die();
+		} else {
+			$results['success'] = false;
+			$results['msg'] = 'Something went wrong. See your administrator.';
+			print_r(json_encode($results));
+			die();
+		}
+	}
+
+	/**
+	 * ensure the user has passed the proper data
+	 *
+	 * @param string $username
+	 * @param string $password
+	 * @param string $email
+	 * @param string $first_name
+	 * @param string $last_name
+	 * @param string $membership_number
+	 * @return array of WP_ERROR
+	 */
+	private function registration_validation($username, $password, $email, $first_name, $last_name, $membership_number)
+	{
+		$reg_errors = new WP_Error;
+
+		if (empty($username) || empty($password) || empty($email)  || empty($first_name)  || empty($last_name)) {
+			$reg_errors->add('field', 'Required form field is missing');
+		}
+
+		if (5 > strlen($username)) {
+			$reg_errors->add('username_length', 'Username too short. At least 5 characters is required');
+		}
+
+		if (username_exists($username)) {
+			$reg_errors->add('user_name', 'Sorry, that username already exists!');
+		}
+
+		if (!validate_username($username)) {
+			$reg_errors->add('username_invalid', 'Sorry, the username you entered is not valid');
+		}
+
+		if (5 > strlen($password)) {
+			$reg_errors->add('password', 'Password length must be greater than 5');
+		}
+
+		if (!is_email($email)) {
+			$reg_errors->add('email_invalid', 'Email is not valid');
+		}
+
+		if (email_exists($email)) {
+			$reg_errors->add('email', 'Email Already in use');
+		}
+
+		return $reg_errors;
+	}
+	/**
+	 * Undocumented function
+	 * @param int 		$registation_id
+	 * @param string $username
+	 * @param string $password
+	 * @param string $email
+	 * @param string $first_name
+	 * @param string $last_name
+	 * @param string $membership_number
+	 * @return void
+	 */
+	function complete_registration($registration_id, $username, $password, $email, $first_name, $last_name, $membership_number)
+	{
+		global $wpdb;
+
+		// get the current registration
+		$registration = $wpdb->get_row("SELECT * FROM {$this->getTable('registration_list')} 
+			WHERE id = $registration_id", ARRAY_A);
+
+		if (count($registration) == 0) {
+			//error
+			$this->handleError('This user registration was not found.');
+		}
+
+		if (!empty($registration['username'])) {
+			//error
+			$this->handleError('This user is already registered.');
+		}
+
+
+
+		// add the new user
+		$user_data = array(
+			'user_login'    =>   $username,
+			'user_email'    =>   $email,
+			'user_pass'     =>   $password,
+			'first_name'    =>   $first_name,
+			'last_name'     =>   $last_name
+		);
+		$user = wp_insert_user($user_data);
+		if (is_wp_error($user)) {
+			$this->handleError('Something went wrong when adding user.');
+		}
+
+		// update the registration with username and user_id
+		$registration['username'] = $username;
+		$registration['user_id'] = $user;
+
+		$count = $wpdb->update(
+			$this->getTable('registration_list'),
+			$registration,
+			array('id' => $registration_id)
+		);
+
+		if ($count = 0) {
+			$this->handleError('Something went wrong in saving registation data');
+		}
+
+		$table_name = $this->getTable('member_list');
+		$id = $registration['membership_id'];
+
+		// check to see if dependent record
+		if ($registration['dependent_id'] > 0) {
+			$table_name = $this->getTable('dependent_list');
+			$id = $registration['dependent_id'];
+		}
+
+		$count = $wpdb->update(
+			$table_name,
+			array(
+				'first_name' => $first_name,
+				'last_name' => $last_name,
+				'email'		=> $email
+			),
+			array('id' => $id)
+		);
+
+		if ($count === false) {
+			$this->handleError('Something went wrong in saving user data');
+		}
+
+		return true;
+	}
+	public function contact_form()
+	{
+		// check to ensure we know the requester
+		if (!check_ajax_referer('scs-contact-form-check-string', 'security')) {
+			return $this->handleError('Illegal Request', Requests_Exception_HTTP_401);
+		}
+
+
+
+		$phone 	= 				sanitize_text_field($_POST['phone']);
+		$email      =   		sanitize_email($_POST['email']);
+		$first_name =   		sanitize_text_field($_POST['first_name']);
+		$last_name  =   		sanitize_text_field($_POST['last_name']);
+		$comments = 			sanitize_textarea_field($_POST['comments']);
+
+		$reg_errors = $this->comments_validation($email, $first_name, $last_name);
+
+		if (count($reg_errors->errors) > 0) {
+			$message = "";
+			foreach ($reg_errors->get_error_messages() as $error_message) {
+				$message .=  $error_message . '<br>';
+			}
+			$this->handleError($message, '400');
+		}
+
+
+		if ($this->complete_contact_request($email, $first_name, $last_name, $phone, $comments)) {
+			$results['success'] = true;
+			$results['msg'] = 'Contact details successfully added.';
+			print_r(json_encode($results));
+			die();
+		} else {
+			$results['success'] = false;
+			$results['msg'] = 'Something went wrong. See your administrator.';
+			print_r(json_encode($results));
+			die();
+		}
+	}
+
+	private function comments_validation($email, $first_name, $last_name)
+	{
+		$reg_error = new WP_Error;
+
+		//to do
+		return $reg_error;
+	}
+
+	private function complete_contact_request($email, $first_name, $last_name, $phone, $comments)
+	{
+		// to do
+		return true;
+	}
 	// use to save the settings from the settings page
 	public function settings_update()
 	{
@@ -738,7 +958,7 @@ class Scsmm_Admin
 			return 0;
 		}
 	}
-	
+
 	/**
 	 * handle errors in the ajax process.
 	 *
@@ -749,9 +969,9 @@ class Scsmm_Admin
 	private function handleError($msg = '', $code = 400)
 	{
 		status_header($code);
-		$results['success'] = false;
-		$results['msg'] = $msg;
-		echo json_encode($results);
+		//$results['success'] = false;
+		//$results['msg'] = $msg;
+		echo $msg;
 		die();
 	}
 }

@@ -172,8 +172,13 @@ class Scsmm
         $this->loader->add_action('wp_ajax_member_application', $plugin_admin, 'member_application');
         $this->loader->add_action('wp_ajax_nopriv_member_application', $plugin_admin, 'member_application');
 
-        // add the handler for membership types post back
-        $this->loader->add_action('wp_ajax_types_update', $plugin_admin, 'update_type_ajax');
+        // add the handler for registration post back
+        $this->loader->add_action('wp_ajax_register_member', $plugin_admin, 'register_member');
+        $this->loader->add_action('wp_ajax_nopriv_register_member', $plugin_admin, 'register_member');
+
+         // add the handler for registration post back
+         $this->loader->add_action('wp_ajax_contact_form', $plugin_admin, 'contact_form');
+         $this->loader->add_action('wp_ajax_nopriv_contact_form', $plugin_admin, 'contact_form');
 
         // Add menu item
         $this->loader->add_action('admin_menu', $plugin_admin, 'add_scsmm_admin_menu');
@@ -198,6 +203,7 @@ class Scsmm
         $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
         $this->loader->add_shortcode('scsmm-apply', $plugin_public, 'apply_shortcode');
         $this->loader->add_shortcode('scsmm-registration-check', $plugin_public, 'registration_check_shortcode');
+        $this->loader->add_shortcode('scsmm-contact-form', $plugin_public, 'contact_form_shortcode');
         
     }
 

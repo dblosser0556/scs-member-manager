@@ -472,10 +472,25 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
             },
             error: function(response) {
                 console.log('add error ', response);
-                var errmsg = JSON.parse(response.responseText);
-                displayAlert(errmsg.msg);
-                jQuery("#loader").hide();
-                jQuery("button#delete").show();
+					const contentType = response.getResponseHeader("content-type");
+					if (contentType && contentType.indexOf("application/json") !== -1) {
+						return response.json().then(data => {
+							// process your JSON data further
+							var errmsg = response.responseText;
+							displayAlert(errmsg);
+							jQuery("#loader").hide();
+
+						});
+					} else {
+						var errmsg = response.responseText;
+						if (errmsg == '')
+							errmsg = response.statusText;
+						displayAlert(errmsg);
+                        jQuery("#loader").hide();
+                        jQuery("button#delete").show();
+					}
+
+             
             }
         });
     });
@@ -557,13 +572,13 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
 
     function displayAlert(msg) {
-        jQuery("#alertText").text(msg);
+        jQuery("#alertText").html(msg);
         jQuery("#alert").show();
     }
 
     function displaySuccess(msg) {
         console.log('display success fired');
-        jQuery("#successText").text(msg);
+        jQuery("#successText").html(msg);
         jQuery("#success").show();
     }
 </script>
