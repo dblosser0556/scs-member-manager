@@ -34,7 +34,7 @@ class Member_List_Table extends SCSWP_List_Table
         // set up column widths
         echo '<style type="text/css">';
         echo '.wp-list-table .column-cb { width: 5%; }';
-        echo '.wp-list-table .column-membername { width: 30%; }';
+        echo '.wp-list-table .column-member_name { width: 30%; }';
         echo '.wp-list-table .column-type { width: 10%; }';
         echo '.wp-list-table .column-status { width: 10%; }';
         echo '.wp-list-table .column-email { width: 15%; }';
@@ -48,7 +48,7 @@ class Member_List_Table extends SCSWP_List_Table
     {
         $table_columns = array(
             'cb'        => '<input type = "checkbox" />',
-            'membername' => __('Name', 'scsmm'),
+            'member_name' => __('Name', 'scsmm'),
             'type'      => __('Type', 'scsmm'),
             'status'    => __('Status', 'scsmm'),
             'email'     => __('Email', 'scsmm'),
@@ -129,7 +129,7 @@ class Member_List_Table extends SCSWP_List_Table
         return sprintf($checkbox);
     }
 
-    protected function column_membername($item)
+    protected function column_member_name($item)
     {
 
         $admin_page_url =  admin_url('admin.php');
@@ -138,7 +138,7 @@ class Member_List_Table extends SCSWP_List_Table
         $query_args_view_member = array(
             'page'        =>  wp_unslash($_REQUEST['page']),
             'action'    => 'view_member',
-            'memberid'        => absint($item['id']),
+            'member_id'        => absint($item['id']),
             '_wpnonce'    => wp_create_nonce('view_member_nonce'),
         );
         $view_member_link = esc_url(add_query_arg($query_args_view_member, $admin_page_url));
@@ -148,14 +148,14 @@ class Member_List_Table extends SCSWP_List_Table
         $query_args_edit_member = array(
             'page'        =>  wp_unslash($_REQUEST['page']),
             'action'    => 'edit_member',
-            'memberid'        => absint($item['id']),
+            'member_id'        => absint($item['id']),
             '_wpnonce'    => wp_create_nonce('edit_member_nonce'),
         );
         $edit_member_link = esc_url(add_query_arg($query_args_edit_member, $admin_page_url));
         $actions['edit_member'] = '<a href="' . $edit_member_link . '">' . __('Edit', $this->plugin_name) . '</a>';
 
 
-        $row_value = '<strong>' . $item['membername'] . '</strong>';
+        $row_value = '<strong>' . $item['member_name'] . '</strong>';
         return $row_value . $this->row_actions($actions);
     }
 
@@ -185,11 +185,11 @@ class Member_List_Table extends SCSWP_List_Table
             $query_args = array(
                 'page'          =>  wp_unslash($_REQUEST['page']),
                 'action'        => 'change_status',
-                'memberid'      => absint($item['id']),
+                'member_id'      => absint($item['id']),
                 '_wpnonce'      => wp_create_nonce('change_status_nonce'),
             );
 
-            // add the final additonal parameters
+            // add the final additional parameters
             foreach ($query_params as $query_param) {
                 $parts = explode("=", $query_param);
                 $query_args[$parts[0]] = $parts[1];
@@ -239,7 +239,7 @@ class Member_List_Table extends SCSWP_List_Table
          * specify which columns should have the sort icon.	
          */
         $sortable_columns = array(
-            'membername' => 'membername',
+            'member_name' => 'member_name',
             'type' => 'type',
             'status' => 'status',
             'join_date' => 'join_date'
@@ -263,7 +263,7 @@ class Member_List_Table extends SCSWP_List_Table
         $orderby = (isset($_GET['orderby'])) ? esc_sql($_GET['orderby']) : 'status';
         $order = (isset($_GET['order'])) ? esc_sql($_GET['order']) : 'ASC';
 
-        $sql = "SELECT memberships.*, Concat(memberships.first_name, ' ', memberships.last_name) as membername, 
+        $sql = "SELECT memberships.*, Concat(memberships.first_name, ' ', memberships.last_name) as member_name, 
             membership_types.name as type,
             status_types.name as status FROM 
         {$this->getTable('member_list')} as memberships,
@@ -295,8 +295,8 @@ class Member_List_Table extends SCSWP_List_Table
     // Returns an associative array containing the bulk action.
     public function get_bulk_actions()
     {
-        /*
-	 * on hitting apply in bulk actions the url paramas are set as
+    /*
+	 * on hitting apply in bulk actions the url params are set as
 	 * ?action=bulk-download&paged=1&action2=-1
 	 * 
 	 * action and action2 are set based on the triggers above and below the table		 		    
@@ -330,7 +330,7 @@ class Member_List_Table extends SCSWP_List_Table
             if (!wp_verify_nonce($nonce, 'view_member_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_edit_member('view_member', $_REQUEST['memberid']);
+                $this->page_edit_member('view_member', $_REQUEST['member_id']);
                 $this->graceful_exit();
             }
         }
@@ -341,7 +341,7 @@ class Member_List_Table extends SCSWP_List_Table
             if (!wp_verify_nonce($nonce, 'edit_member_nonce')) {
                 $this->invalid_nonce_redirect();
             } else {
-                $this->page_edit_member('edit_member', $_REQUEST['memberid']);
+                $this->page_edit_member('edit_member', $_REQUEST['member_id']);
                 $this->graceful_exit();
             }
         }
@@ -397,12 +397,12 @@ class Member_List_Table extends SCSWP_List_Table
      * 
      * @param int $user_id  user's ID	 
      */
-    public function page_edit_member($action, $memberid)
+    public function page_edit_member($action, $member_id)
     {
         $query_args = array(
             'page' => $this->plugin_name . '-membership',
             'action' => $action,
-            'memberid' => $memberid,
+            'member_id' => $member_id,
             'referer' => $_REQUEST['page']
         );
 
@@ -467,7 +467,7 @@ class Member_List_Table extends SCSWP_List_Table
             );
 
             // get the member 
-            $member = $this->fetch_member($_REQUEST['memberid']);
+            $member = $this->fetch_member($_REQUEST['member_id']);
 
 
             // sender is stored in the options
@@ -483,7 +483,7 @@ class Member_List_Table extends SCSWP_List_Table
                 $membership_number = $this->get_next_membership_number($member['membership_type_id']);
 
                 // get the list of dependents for this member id
-                $dependents = $this->fetch_dependents($_REQUEST['memberid']);
+                $dependents = $this->fetch_dependents($_REQUEST['member_id']);
 
                 //add the registration requests to the registration list
                 $count = $this->add_registration($member['id'], 0, $member['first_name'], $member['last_name'], $member['email']);
@@ -505,7 +505,7 @@ class Member_List_Table extends SCSWP_List_Table
             $count = $wpdb->update(
                 $this->getTable('member_list'),
                 $member,
-                array('id' => $_REQUEST['memberid'])
+                array('id' => $_REQUEST['member_id'])
             );
             if (!$count) {
                 $this->errormessage = 'Something went wrong is setting the final status';
@@ -516,13 +516,14 @@ class Member_List_Table extends SCSWP_List_Table
         if (isset($_REQUEST['email'])) {
 
             $id = ($_REQUEST['email']);
-            $member_id = ($_REQUEST['memberid']);
+            $member_id = ($_REQUEST['member_id']);
 
 
             // get the member
             $member = $this->fetch_member($member_id);
 
-            $this->send_email($id, $member);
+            apply_filters( 'send_email_with_template', $id, $to='', $from='', $member );
+            //$this->send_email($id, $member);
 
 
         }
@@ -530,15 +531,14 @@ class Member_List_Table extends SCSWP_List_Table
         if (isset($_REQUEST['reg-email'])) { 
 
             $id = ($_REQUEST['reg-email']);
-            $member_id = ($_REQUEST['memberid']);
+            $member_id = ($_REQUEST['member_id']);
 
             $members = $this->fetch_registrations($member_id);
 
-            // get the url of the check registration option
-            $check_page_url = $options['registration-check-page'];
             
             foreach($members as $member){
-                $this->send_email($id, $member, $check_page_url);
+                apply_filters( 'send_email_with_template', $id, $to='', $from='', $member);
+                //$this->send_email($id, $member, $check_page_url);
             }
         }
         
@@ -548,13 +548,13 @@ class Member_List_Table extends SCSWP_List_Table
     public function page_download_members($ids)
     {
 
-        //todo
+        //todo:
     }
 
     public function page_delete_members($ids)
     {
 
-        //todo
+        //todo:
     }
 
     private function send_email($email_id, $member, $check_page_url = '')

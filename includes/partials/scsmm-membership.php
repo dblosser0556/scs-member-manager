@@ -15,18 +15,12 @@
 
 <?php
 
-function getTable($table)
-{
-    global $wpdb;
-    return "{$wpdb->prefix}scsmm_{$table}";
-}
-
 
 function get_member($memberId)
 {
     global $wpdb;
-    $table_member_list = getTable('member_list');
-    $table_types = getTable('membership_types');
+    $table_member_list = apply_filters('get_plugin_table', 'member_list');
+    $table_types = apply_filters('get_plugin_table', 'membership_types');
     return $wpdb->get_row("SELECT memberships.*, membership_types.name as type
 		FROM $table_member_list as memberships,
             $table_types as membership_types
@@ -37,8 +31,8 @@ function get_member($memberId)
 function get_dependents($memberId)
 {
     global $wpdb;
-    $table_list = getTable('dependent_list');
-    $table_types = getTable('relationship_types');
+    $table_list = apply_filters('get_plugin_table', 'dependent_list');
+    $table_types = apply_filters('get_plugin_table', 'relationship_types');
     return $wpdb->get_results("SELECT dependents.*, relationship_types.name as type FROM 
 			$table_list as dependents,
 	   		$table_types as relationship_types
@@ -52,14 +46,14 @@ function get_dependents($memberId)
 function get_relationship_types()
 {
     global $wpdb;
-    $table_name = getTable('relationship_types');
+    $table_name = apply_filters('get_plugin_table', 'relationship_types');
     return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
 }
 
 function get_status_types()
 {
     global $wpdb;
-    $table_name = getTable('status_types');
+    $table_name = apply_filters('get_plugin_table', 'status_types');
     return $wpdb->get_results("SELECT * FROM $table_name ORDER BY id");
 }
 
@@ -67,13 +61,13 @@ function get_status_types()
 function get_memberships_types()
 {
     global $wpdb;
-    $table_name = getTable('membership_types');
+    $table_name = apply_filters('get_plugin_table', 'membership_types');
     return $wpdb->get_results("SELECT * FROM $table_name ORDER BY name");
 }
 function get_status_new()
 {
     global $wpdb;
-    $table_name = getTable('status_types');
+    $table_name = apply_filters('get_plugin_table', 'status_types');
     $_status = $wpdb->get_row("SELECT * FROM $table_name WHERE status_key ='new'");
     return $_status->id;
 }
@@ -96,8 +90,8 @@ $status_types = get_status_types();
 $status_new = get_status_new();
 $redirect = get_success_redirect();
 
-if (isset($_GET['memberid'])) {
-    $member_id = $_GET['memberid'];
+if (isset($_GET['member_id'])) {
+    $member_id = $_GET['member_id'];
     $member = get_member($member_id);
     $dependents = get_dependents($member_id);
 }
@@ -165,24 +159,27 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
 <div class="container">
     <h2><?= esc_html__('Applicant', PLUGIN_TEXT_DOMAIN) ?> </h2>
-    <form id="applyform" class="needs-validation" novalidate>
+    <form id="application_form" class="needs-validation" novalidate>
         <input type="text" hidden name="action" value="member_application" />
+        
         <input type="text" hidden name="id" value="<?= $member->id ?>" />
+        <input type="text" hidden name="security" value="<?= $ajax_nonce; ?>" />
+        <input type="text" hidden name="dependents" value="<?= count($dependents); ?>" />
         <div class="form-row" style="border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: gray;height:30px;">
 
         </div>
         <div class="form-row">
             <div class="col-md-9 mb-4">
-                <label for="membership_type_id"><?= esc_html__('Membership Type', PLUGIN_TEXT_DOMAIN)?></label>
+                <label for="membership_type_id"><?= esc_html__('Membership Type', PLUGIN_TEXT_DOMAIN) ?></label>
                 <select class="form-control" id="membership_type_id" name="membership_type_id" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;" <?= $readonly ? 'readonly' : '' ?>>
                     <?php foreach ($membership_types as $type) { ?>
-                    <option value="<?= $type->id ?>" <?= $member->membership_type_id == $type->id ? 'selected="selected"' : ''; ?>><b><?= $type->name ?></b> - <?= $type->description ?></option>
+                        <option value="<?= $type->id ?>" <?= $member->membership_type_id == $type->id ? 'selected="selected"' : ''; ?>><b><?= $type->name ?></b> - <?= $type->description ?></option>
                     <?php } ?>
-                </select>
+               <!--  </select>
                 <div class="invalid-feedback">
                     Please provide a requested membership type
-                </div>
+                </div> -->
             </div>
 
             <div class="col-md-3 mb-2">
@@ -190,38 +187,38 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
                 <select <?= $member->id == 0 ? 'readonly' : '' ?> <?= $readonly ? 'readonly' : '' ?> class="form-control" id="status_id" name="status_id" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;">
                     <?php foreach ($status_types as $type) { ?>
-                    <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == $status_new ? 'selected="selected"' : $member->status_id == $type->id ? 'selected="selected"' : ''; ?>><?= $type->name ?> </option>
+                        <option value="<?= $type->id ?>" <?= $member->id == 0 && $type->id == $status_new ? 'selected="selected"' : $member->status_id == $type->id ? 'selected="selected"' : ''; ?>><?= $type->name ?> </option>
                     <?php } ?>
                 </select>
-                <div class="invalid-feedback">
+                <!-- <div class="invalid-feedback">
                     Please provide a status
-                </div>
+                </div> -->
             </div>
         </div>
         <div class="form-row">
             <div class="col-md-6 mb-3">
                 <label for="firstName">First name*</label>
                 <input type="text" class="form-control" id="firstName" name="first_name" placeholder="First name" value="<?= $member->first_name ?>" required <?= $readonly ? 'readonly' : '' ?> />
-                <div class="invalid-feedback">
+              <!--   <div class="invalid-feedback">
                     Please provide a first name.
-                </div>
+                </div> -->
             </div>
             <div class="col-md-6 mb-3">
                 <label for="lastName">Last name*</label>
                 <input type="text" class="form-control" id="lastName" name="last_name" placeholder="Last name" value="<?= $member->last_name ?>" required <?= $readonly ? 'readonly' : '' ?> />
-                <div class="invalid-feedback">
+               <!--  <div class="invalid-feedback">
                     Please provide a last name.
-                </div>
+                </div> -->
             </div>
-            
+
         </div>
         <div class="form-row">
             <div class="col-md-12 mb-6">
                 <label for="address1">Address Line 1*</label>
                 <input type="text" class="form-control" id="address1" name="address1" placeholder="Address 1" value="<?= $member->address1 ?>" required <?= $readonly ? 'readonly' : '' ?> />
-                <div class="invalid-feedback">
+               <!--  <div class="invalid-feedback">
                     Please provide an address.
-                </div>
+                </div> -->
             </div>
         </div>
         <div class="form-row">
@@ -298,41 +295,41 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
                     <option <?php if ($member->state == "WY") echo 'selected'; ?> value="WY">Wyoming</option>
                 </select>
 
-                <div class="invalid-feedback">
+                <!-- <div class="invalid-feedback">
                     Please provide a valid state.
-                </div>
+                </div> -->
             </div>
             <div class="col-md-3 mb-3">
                 <label for="zipcode">Zip*</label>
-                <input type="text" class="form-control zipcode" id="zipcode" name="zipcode" placeholder="Zip" pattern="(\d{5}([\-]\d{4})?)" value="<?= $member->zipcode ?>" required <?= $readonly ? 'readonly' : '' ?>>
-                <div class="invalid-feedback">
+                <input type="text" class="form-control zipcode" id="zipcode" name="zipcode" placeholder="Zip" data-inputmask="'mask': '99999[-9999]'" pattern="(\d{5}([\-]\d{4})?)" value="<?= $member->zipcode ?>" required <?= $readonly ? 'readonly' : '' ?>>
+                <!-- <div class="invalid-feedback">
                     Please provide a valid zip.
-                </div>
+                </div> -->
             </div>
         </div>
         <div class="form-row">
             <div class="col-md-3 mb-2">
                 <label for="phone">Phone</label>
-                <input type="tel" class="form-control phone" id="phone" name="phone" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Phone Number" value="<?= $member->phone ?>" <?= $readonly ? 'readonly' : '' ?> />
-                <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small>
-                <div class="invalid-feedback">
+                <input type="tel" class="form-control phone" id="phone" name="phone" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" data-inputmask="'mask': '(999) 999-9999'" placeholder="Phone Number" value="<?= $member->phone ?>" <?= $readonly ? 'readonly' : '' ?> />
+                <!-- <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small> -->
+                <!-- <div class="invalid-feedback">
                     Please provide a valid phone number.
-                </div>
+                </div> -->
             </div>
             <div class="col-md-3 mb-2">
                 <label for="mobile">Mobile</label>
-                <input type="tel" class="form-control phone" id="mobile" name="mobile" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" placeholder="Mobile Number" value="<?= $member->mobile ?>" <?= $readonly ? 'readonly' : '' ?> />
-                <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small>
-                <div class="invalid-feedback">
+                <input type="tel" class="form-control phone" id="mobile" name="mobile" pattern="[\(][0-9]{3}[\)] [0-9]{3}[\-][0-9]{4}" data-inputmask="'mask': '(999) 999-9999'" placeholder="Mobile Number" value="<?= $member->mobile ?>" <?= $readonly ? 'readonly' : '' ?> />
+                <!-- <small id="emailHelp" class="form-text text-muted">Like (555) 555-5555.</small> -->
+               <!--  <div class="invalid-feedback">
                     Please provide a valid mobile.
-                </div>
+                </div> -->
             </div>
             <div class="col-md-3 mb-2">
                 <label for="email">Email*</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="Email" required value="<?= $member->email ?>" <?= $readonly ? 'readonly' : '' ?> />
-                <div class="invalid-feedback">
+                <input type="text" class="form-control" id="email" name="email"  data-inputmask="'alias': 'email'" placeholder="Email" required value="<?= $member->email ?>" <?= $readonly ? 'readonly' : '' ?> />
+                <!-- <div class="invalid-feedback">
                     Please provide a valid email.
-                </div>
+                </div> -->
             </div>
 
             <div class="col-md-3 mb-2">
@@ -396,13 +393,26 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
     </tbody>
 </table>
 <script>
-    var dependents = <?= count($dependents) ?>;
+    
+/* 
+    //input masks
+    jQuery(document).ready(function() {
+        //jQuery("#dependantTable #dep_phone").inputmask();
+        //jQuery("#dependantTable #dep_mobile").inputmask();
+        //jQuery(":input").inputmask();
+
+        //jQuery("#dependantTable").on('focus', '#dep_phone', jQuery('#dep_phone').inputmask('999-9999'));
+    });
+
 
     jQuery("button#addDependents").click(function() {
         jQuery('#row0').clone().appendTo('#dependantTable tbody');
         dependents++;
         updateDepNo(0, dependents);
         jQuery('#row' + dependents).css('display', '');
+        jQuery('#row' + dependents).find("#dep_phone").inputmask();
+        jQuery('#row' + dependents).find("#dep_mobile").inputmask();
+        jQuery('#row' + dependents).find("#dep_email").inputmask();
 
     });
 
@@ -420,7 +430,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
     jQuery("button#mmsubmit").click(function(event) {
 
-        var form = jQuery("#applyform");
+        var form = jQuery("#application_form");
 
         if (form[0].checkValidity() === false) {
             event.preventDefault();
@@ -432,9 +442,9 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
         form[0].classList.add('was-validated');
 
 
-        var applyData = jQuery('#applyform').serialize();
+        var applyData = jQuery('#application_form').serialize();
         applyData += '&dependantCount=' + dependents;
-        applyData += '&security=' + '<?= $ajax_nonce; ?>';
+        applyData += '&security=' + '?= $ajax_nonce; ?>';
 
         jQuery.ajax({
             type: "POST",
@@ -451,8 +461,8 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
                 if (res.success) {
                     displaySuccess(res.msg);
-                    if(res.insert == 'insert')
-                        window.location.href = '<?= $redirect ?>';
+                    if (res.insert == 'insert')
+                        window.location.href = '?= $redirect ?>';
                 } else
                     displayAlert(res.msg);
 
@@ -461,40 +471,40 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
             },
             error: function(response) {
                 console.log('add error ', response);
-					const contentType = response.getResponseHeader("content-type");
-					if (contentType && contentType.indexOf("application/json") !== -1) {
-						return response.json().then(data => {
-							// process your JSON data further
-							var errmsg = response.responseText;
-							displayAlert(errmsg);
-							jQuery("#loader").hide();
-
-						});
-					} else {
-						var errmsg = response.responseText;
-						if (errmsg == '')
-							errmsg = response.statusText;
-						displayAlert(errmsg);
+                const contentType = response.getResponseHeader("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json().then(data => {
+                        // process your JSON data further
+                        var errmsg = response.responseText;
+                        displayAlert(errmsg);
                         jQuery("#loader").hide();
-                        jQuery("button#delete").show();
-					}
 
-             
+                    });
+                } else {
+                    var errmsg = response.responseText;
+                    if (errmsg == '')
+                        errmsg = response.statusText;
+                    displayAlert(errmsg);
+                    jQuery("#loader").hide();
+                    jQuery("button#delete").show();
+                }
+
+
             }
         });
     });
 
     function updateDepNo(oldRow, newRow) {
-        var findrow = 'row' + oldRow;
-        //var rows = jQuery('#'+ findrow + ':first').length;
-        //var cells = jQuery('[data-row=' + findrow + ']').length;
-        //var all = jQuery('#'+ findrow + ':first').find('[data-row=' + findrow + ']').length;
+        var find_row = 'row' + oldRow;
+        //var rows = jQuery('#'+ find_row + ':first').length;
+        //var cells = jQuery('[data-row=' + find_row + ']').length;
+        //var all = jQuery('#'+ find_row + ':first').find('[data-row=' + find_row + ']').length;
         //alert(rows);
         //alert(cells);
         //alert(all);
 
-        jQuery('#' + findrow + ':first').find('[data-row=' + findrow + ']').each(function(index) {
-            //, '[data-row=' + findrow + ']'
+        /*jQuery('#' + find_row + ':first').find('[data-row=' + find_row + ']').each(function(index) {
+            //, '[data-row=' + find_row + ']'
             switch (this.id) {
                 case "id":
                     this.name = "id" + newRow;
@@ -532,8 +542,8 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
 
             }
 
-        });
-
+        });*/
+/*
         // fix the header
         jQuery('#header-row' + oldRow + ':first').each(function(index) {
             jQuery(this).text('Dependant ' + newRow);
@@ -541,7 +551,7 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
         });
 
         // fix the table row id
-        jQuery('#' + findrow + ':first').each(function(index) {
+        jQuery('#' + find_row + ':first').each(function(index) {
             this.id = 'row' + newRow;
         });
 
@@ -553,21 +563,12 @@ $ajax_nonce = wp_create_nonce("scs-member-check-string");
         });
 
     }
+ */
 
 
 
 
 
 
-
-    function displayAlert(msg) {
-        jQuery("#alertText").html(msg);
-        jQuery("#alert").show();
-    }
-
-    function displaySuccess(msg) {
-        console.log('display success fired');
-        jQuery("#successText").html(msg);
-        jQuery("#success").show();
-    }
+   
 </script>

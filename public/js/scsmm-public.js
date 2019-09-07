@@ -31,8 +31,7 @@
 	$(document).ready(function () {
 
 		//input masks
-		$("input.phone").mask("(999) 999-9999");
-		$("input.zipcode").mask("99999");
+		$(":input").inputmask();
 
 		// set up the validation for the registration form.
 		$("#registration_form").validate({
@@ -137,65 +136,8 @@
 		});
 
 
-		function submit(form) {
-			var applyData = jQuery(form).serialize();
-
-			$.ajax({
-				type: "POST",
-				url: '/wp-admin/admin-ajax.php',
-				data: applyData,
-				beforeSend: function () {
-					$("#loader").show();
-				},
-
-				success: function (response) {
-					console.log('add success ', response);
-					var res = JSON.parse(response);
-
-					jQuery("#loader").hide();
-					if (res.success) {
-						displaySuccess(res.msg);
-						window.location.href = register_success_redirect;
-					} else
-						displayAlert(res.msg);
-
-					
-
-				},
-				error: function (response) {
-					console.log('add error ', response);
-					const contentType = response.getResponseHeader("content-type");
-					if (contentType && contentType.indexOf("application/json") !== -1) {
-						return response.json().then(data => {
-							// process your JSON data further
-							var errmsg = response.responseText;
-							displayAlert(errmsg);
-							$("#loader").hide();
-
-						});
-					} else {
-						var errmsg = response.responseText;
-						if (errmsg == '')
-							errmsg = response.statusText;
-						displayAlert(errmsg);
-						$("#loader").hide();
-					}
-				}
-
-
-			});
-		}
-
-		function displayAlert(msg) {
-			$("#alertText").html(msg);
-			$("#alert").show();
-		}
-
-		function displaySuccess(msg) {
-			$("#successText").html(msg);
-			$("#success").show();
-		}
-
+	
+	
 	}); //document ready
 
 

@@ -99,32 +99,15 @@ class Scsmm_Public {
 
 		// add the custom script
 		wp_enqueue_script( $this->plugin_name, PLUGIN_URL . 'public/js/scsmm-public.js', array( 'jquery' ), date('h:i:s'), false );
-		
-		// add variables 
-		$options = get_option( PLUGIN_TEXT_DOMAIN);
-
-		if(isset($options['register-success-redirect-page']) ) {
-			$register_success_redirect = $options['registration-success-redirect-page'];
-		} else {
-			$register_success_redirect = wp_login_url();
-		}
-
-		if(isset($options['contact-success-redirect-page']) ) {
-			$contact_success_redirect = $options['contact-success-redirect-page'];
-		} else {
-			$contact_success_redirect = home_url();
-		}
-
-		$script = 'register_success_redirect = ' . json_encode($register_success_redirect) . '; ';
-		$script = 'contact_success_redirect = ' . json_encode($contact_success_redirect) . '; ';
-		wp_add_inline_script($this->plugin_name, $script, 'before'); 
-		
+		wp_enqueue_script( $this->plugin_name . 'membership', PLUGIN_URL . 'includes/js/scsmm-membership.js', array( 'jquery' ), date('h:i:s'), false );
+		wp_enqueue_script( $this->plugin_name . 'common', PLUGIN_URL . 'includes/js/scsmm-common.js', array( 'jquery' ), date('h:i:s'), false );		
 		
 		// enqueue the the jQuery plugins  
 		wp_enqueue_script( $this->plugin_name . "bootstrap", PLUGIN_URL . 'includes/js/bootstrap.bundle.min.js', array( 'jquery' ), $this->version, false );
 		wp_enqueue_script( $this->plugin_name . "validation", PLUGIN_URL .  'includes/js/jquery.validate.min.js',  array( 'jquery' ), $this->version, false );
 		wp_enqueue_script( $this->plugin_name . "validation-add", PLUGIN_URL . 'includes/js/additional-methods.min.js', array( 'jquery' ), $this->version, false );
-		wp_enqueue_script( $this->plugin_name . "masked-input", PLUGIN_URL .  'includes/js/jquery.maskedinput.min.js',  array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . "input-mask", PLUGIN_URL . 'includes/js/jquery.inputmask.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name . "input-mask-bindings", PLUGIN_URL . 'includes/js/inputmask.binding.js', array( 'jquery' ), $this->version, false );
 	}
 
 	

@@ -54,7 +54,7 @@ $ajax_nonce = wp_create_nonce("scs-contact-form-check-string");
         </div>
         <div class="form-group">
             <label for="phone">Phone</label>
-            <input type="text" class="form-control phone" id="phone" name="phone">
+            <input type="text" class="form-control phone" data-inputmask="'mask': '(999) 999-9999'" id="phone" name="phone">
         </div>
         
         <div class="form-group">

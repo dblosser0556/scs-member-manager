@@ -43,9 +43,10 @@ class Scsmm_Deactivator
 
 
         $titles = array(
-            'Registration Check', 'Registration Check Redirect',
-            'Registration Expired Redirect', 'Registration Not Found Redirect',
-            'Thanks for Applying'
+            'Registration Check - SCS', 'Registration Check Redirect - SCS',
+            'Registration Expired Redirect - SCS', 'Registration Not Found Redirect - SCS',
+            'Thanks for Applying - SCS','Contact Us - SCS', 'Thanks for Contacting Us - SCS',
+            'Thanks for Registering With Us - SCS'
         );
 
 

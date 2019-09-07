@@ -53,7 +53,7 @@ class Scsmm_Admin
 		$this->version = $version;
 
 		// add the callback for the save screen options for the member list page
-		add_filter('set-screen-option', array($this, 'save_member_list_table_screen_options'), 10, 3);
+		add_filter('set-screen-option', array($this, 'list_table_screen_options'), 10, 3);
 	}
 
 	/**
@@ -79,7 +79,7 @@ class Scsmm_Admin
 		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/scsmm-admin.css', array(), $this->version, 'all');
 
 		// include bootstrap from common directory
-		wp_enqueue_style($this->plugin_name . '-load-bs-admin',  plugins_url('includes/css/bootstrap.min.css', __DIR__), array(), $this->version, 'all');
+		wp_enqueue_style($this->plugin_name . '-bootstrap',  plugins_url('includes/css/bootstrap.min.css', __DIR__), array(), $this->version, 'all');
 	}
 
 	/**
@@ -103,10 +103,16 @@ class Scsmm_Admin
 		 */
 
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/scsmm-admin.js', array('jquery'), $this->version, false);
+		wp_enqueue_script( $this->plugin_name . 'membership', PLUGIN_URL . 'includes/js/scsmm-membership.js', array( 'jquery' ), date('h:i:s'), false );
+		wp_enqueue_script( $this->plugin_name . 'common', PLUGIN_URL . 'includes/js/scsmm-common.js', array( 'jquery' ), date('h:i:s'), false );		
 
 		// add the bootstrap scripts
 
-		wp_enqueue_script($this->plugin_name . "bootstrap-admin", plugins_url('includes/js/bootstrap.bundle.min.js', __DIR__), array('jquery'), $this->version, false);
+		wp_enqueue_script($this->plugin_name . "bootstrap-admin", PLUGIN_URL . 'includes/js/bootstrap.bundle.min.js', array('jquery'), $this->version, false);
+		wp_enqueue_script($this->plugin_name . "validation", PLUGIN_URL .  'includes/js/jquery.validate.min.js',  array('jquery'), $this->version, false);
+		wp_enqueue_script($this->plugin_name . "validation-add", PLUGIN_URL . 'includes/js/additional-methods.min.js', array('jquery'), $this->version, false);
+		wp_enqueue_script($this->plugin_name . "input-mask", PLUGIN_URL . 'includes/js/jquery.inputmask.js', array('jquery'), $this->version, false);
+		wp_enqueue_script($this->plugin_name . "input-mask-bindings", PLUGIN_URL . 'includes/js/inputmask.binding.js', array('jquery'), $this->version, false);
 	}
 
 	/**
@@ -415,9 +421,15 @@ class Scsmm_Admin
 	 * @param string $option The option name.
 	 * @param array  $value  Whatever option you're setting.
 	 */
-	public function save_member_list_table_screen_options($status, $option, $value)
+	public function list_table_screen_options($status, $option, $value)
 	{
 		if ('members_per_page' == $option) return $value;
+		if ('emails_per_page' == $option) return $value;
+		if ('relationship_types_per_page' == $option) return $value;
+		if ('status_per_page' == $option) return $value;
+		if ('membership_types_per_page' == $option) return $value;
+		if ('contact_per_page' == $option) return $value;
+
 		return $status;
 	}
 
@@ -454,57 +466,44 @@ class Scsmm_Admin
 			!isset($_REQUEST['dependantCount']) ||
 			!isset($_REQUEST['first_name']) ||
 			!isset($_REQUEST['last_name']) ||
-			!isset($_REQUEST['email']) 
+			!isset($_REQUEST['email'])
+
 		) return $this->handleError('Missing Data.');
 
 		// sanitize all the fields.
+
 		$id = (int) sanitize_text_field($_REQUEST['id']);
 		$dependantCount = sanitize_text_field($_REQUEST['dependantCount']);
-		$first_name = sanitize_text_field($_REQUEST['first_name']);
-		$last_name = sanitize_text_field($_REQUEST['last_name']);
-		$email = sanitize_email($_REQUEST['email']);
-		$notes = sanitize_textarea_field($_REQUEST['notes']);
+
+		$member = array(
+			'first_name' => sanitize_text_field($_REQUEST['first_name']),
+			'last_name' => sanitize_text_field($_REQUEST['last_name']),
+			'address1' => sanitize_text_field($_REQUEST['address1']),
+			'address2' => sanitize_text_field($_REQUEST['address2']),
+			'city' => sanitize_text_field($_REQUEST['city']),
+			'state' => sanitize_text_field($_REQUEST['state']),
+			'zipcode' => sanitize_text_field($_REQUEST['zipcode']),
+			'phone' => sanitize_text_field($_REQUEST['phone']),
+			'mobile' => sanitize_text_field($_REQUEST['mobile']),
+			'employer' => sanitize_text_field($_REQUEST['employer']),
+			'email' => sanitize_email($_REQUEST['email']),
+			'notes' => sanitize_textarea_field($_REQUEST['notes']),
+			'membership_type_id' => (int) $_REQUEST['membership_type_id'],
+			'status_id' => (int) $_REQUEST['status_id'],
+			'join_date' => sanitize_text_field($_REQUEST['join_date'])
+		);
+
+
+
 
 		$member_table = $this->getTable('member_list');
 
 		if ($id == 0) {
-			$join_date = date(DATE_ATOM);
+
 			// insert
 			$count = $wpdb->insert(
 				$member_table,
-				array(
-					'first_name' => $first_name,
-					'last_name' => $last_name,
-					'address1' => sanitize_text_field($_REQUEST['address1']),
-					'address2' => sanitize_text_field($_REQUEST['address2']),
-					'city' => sanitize_text_field($_REQUEST['city']),
-					'state' => sanitize_text_field($_REQUEST['state']),
-					'zipcode' => sanitize_text_field($_REQUEST['zipcode']),
-					'phone' => sanitize_text_field($_REQUEST['phone']),
-					'mobile' => sanitize_text_field($_REQUEST['mobile']),
-					'employer' => sanitize_text_field($_REQUEST['employer']),
-					'email' => $email,
-					'notes' => $notes,
-					'membership_type_id' => (int) $_REQUEST['membership_type_id'],
-					'status_id' => (int) $_REQUEST['status_id'],
-					'join_date' => sanitize_text_field($_REQUEST['join_date'])
-				),
-				array(
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%d',
-					'%d',
-					'%s'
-				)
+				$member
 			);
 
 			if (!$count) {
@@ -513,175 +512,94 @@ class Scsmm_Admin
 			}
 
 			$membership_id = $wpdb->insert_id;
+		} else {
+			$count = $wpdb->update(
+				$member_table,
+				$member,
+				array('id' => $id)
+			);
+			$membership_id = $id;
+		}
 
-			for ($i = 1; $i <= $dependantCount; $i++) {
-				$count = $this->insertDependant($membership_id, $i);
-				// check for errors	
-				if (!$count) {
-					return $this->handleError('Something went wrong.');
-				}
+		for ($i = 0; $i < $dependantCount; $i++) {
+			$count = $this->insert_or_update_dependant($membership_id, $i);
+			// check for errors	
+			if (!$count) {
+				return $this->handleError('Something went wrong.');
 			}
+		}
+
+		$options = get_option($this->plugin_name);
+		if (isset($options['member-application-notification-email']) && $options['member-application-notification-email'] != ''  && $id == 0) {
 			// email admin
-			$emailTo = get_option($this->plugin_name . '_email');
-			if (!isset($emailTo) || ($emailTo == '')) {
-				$emailTo = get_option('admin_email');
-			}
-			$subject = 'Application Request From ' . $first_name . ' ' . $last_name;
-			$body = "Application Request for Name: $first_name . ' ' . $last_name \n\nEmail: $email \n\nComments: $notes";
-			$headers = 'From: ' . $first_name . ' ' . $last_name . ' <' . $email . '>' . "\r\n" . 'Reply-To: ' . $emailTo;
+			$email_id = $options['member-application-notification-email'];
+			
+			$to = $options['email'];
+			if ($to == '') $to = get_option('admin_email');
 
-			wp_mail($emailTo, $subject, $body, $headers);
-			$emailSent = true;
-
+			$count = apply_filters( 'send_email_with_template', $email_id, $to, $member['email'], $member);
+			//public function send_email_with_template($email_id, $to = '', $from = '', $member = '')
 			// email applicant
+			if ($count) $this->handle_error('Something went wrong with sending notification email');
+		}
 
-			$subject = 'Terrytown Country Club Application';
-			$body = "Thanks for applying to Terrytown Country Club.  We have your application and will be reviewing it shortly.";
-			$headers = 'From: ' . $first_name . ' ' . $last_name . ' <' . $emailTo . '>' . "\r\n" . 'Reply-To: ' . $email;
+		if (isset($options['member-application-confirmation-email']) && $options['member-application-confirmation-email'] != ''  && $id == 0) {
+			
+			$email_id = $options['member-application-confirmation-email'];
+			$count = apply_filters( 'send_email_with_template', $email_id, $to='', $from='', $member);
+			if ($count) $this->handle_error('Something went wrong with sending application confirmation email');
+		}
 
-			wp_mail($emailTo, $subject, $body, $headers);
-			$emailSent = true;
-
-			$results['success'] = true;
+		// todo: use redirect option here.	
+		$results['success'] = true;
 			$results['msg'] = 'Application successfully submitted. We will be back shortly.';
 			$results['insert'] = 'insert';
 			print_r(json_encode($results));
+	
 
+		die();
+	}
+	/**
+	 * Called from member application to insert a new dependant.
+	 *
+	 * @param string $membership_id
+	 * @param string $i
+	 * @return void
+	 * @since 1.0.0
+	 */
+	private function insert_or_update_dependant($membership_id, $i)
+	{
+		global $wpdb;
+		$dependant_table = $this->getTable('dependent_list');
 
+		$dependant_id = (int) sanitize_text_field($_REQUEST['dep_id'][$i]);
+		$dependant = array(
+			'first_name' => sanitize_text_field($_REQUEST['dep_first_name'][$i]),
+			'last_name' => sanitize_text_field($_REQUEST['dep_last_name'][$i]),
+			'phone' => sanitize_text_field($_REQUEST['dep_phone'][$i]),
+			'mobile' => sanitize_text_field($_REQUEST['dep_mobile'][$i]),
+			'email' => sanitize_text_field($_REQUEST['dep_email'][$i]),
+			'membership_id' => $membership_id,
+			'relationship_id' => sanitize_text_field($_REQUEST['dep_relationship_id'][$i])
+		);
 
-			die();
-		} else {
-			// update
-			$count = $wpdb->update(
-				$member_table,
-				array(
-					'first_name' => $first_name,
-					'last_name' => $last_name,
-					'address1' => sanitize_text_field($_REQUEST['address1']),
-					'address2' => sanitize_text_field($_REQUEST['address2']),
-					'city' => sanitize_text_field($_REQUEST['city']),
-					'state' => sanitize_text_field($_REQUEST['state']),
-					'zipcode' => sanitize_text_field($_REQUEST['zipcode']),
-					'phone' => sanitize_text_field($_REQUEST['phone']),
-					'mobile' => sanitize_text_field($_REQUEST['mobile']),
-					'employer' => sanitize_text_field($_REQUEST['employer']),
-					'email' => $email,
-					'notes' => $notes,
-					'membership_type_id' => (int) $_REQUEST['membership_type_id'],
-					'status_id' => (int) $_REQUEST['status_id'],
-					'join_date' => sanitize_text_field($_REQUEST['join_date'])
-				),
-				array('id' => $_REQUEST['id']),
-				array(
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%s',
-					'%d',
-					'%d',
-					'%s'
-				)
+		if ($dependant_id == 0) {
+
+			$count =  $wpdb->insert(
+				$dependant_table,
+				$dependant
 			);
 
-			for ($i = 1; $i <= $dependantCount; $i++) {
-				if ((int) $_REQUEST['id' . $i] > 0) {
-					$count = $this->updateDependant($id, $i);
-				} else {
-					$count = $this->insertDependant($id, $i);
-				}
-
-				// check for errors	
-				if (!$count) {
-					return $this->handleError('Something went wrong.');
-				}
-			}
-			$results['success'] = true;
-			$results['msg'] = 'Member details successfully updated.';
-			$results['insert'] = 'update';
-			print_r(json_encode($results));
-			die();
+			return $count;
+		} else {
+			$count = $wpdb->update(
+				$dependant_table,
+				$dependant,
+				array('id' => $dependant_id)
+			);
 		}
 	}
-	/**
-	 * Called from member application to insert a new dependant.
-	 *
-	 * @param string $membership_id
-	 * @param string $i
-	 * @return void
-	 * @since 1.0.0
-	 */
-	private function insertDependant($membership_id, $i)
-	{
-		global $wpdb;
-		$dependant_table = $this->getTable('dependent_list');
 
-		$count =  $wpdb->insert(
-			$dependant_table,
-			array(
-				'first_name' => sanitize_text_field($_REQUEST['first_name' . $i]),
-				'last_name' => sanitize_text_field($_REQUEST['last_name' . $i]),
-				'phone' => sanitize_text_field($_REQUEST['phone' . $i]),
-				'mobile' => sanitize_text_field($_REQUEST['mobile' . $i]),
-				'email' => sanitize_text_field($_REQUEST['email' . $i]),
-				'membership_id' => $membership_id,
-				'relationship_id' => $_REQUEST['relationship_id' . $i]
-			),
-			array(
-				'%s',
-				'%s',
-				'%s',
-				'%s',
-				'%s',
-				'%d',
-				'%d'
-			)
-		);
-
-		return $count;
-	}
-	/**
-	 * Called from member application to insert a new dependant.
-	 *
-	 * @param string $membership_id
-	 * @param string $i
-	 * @return void
-	 * @since 1.0.0
-	 */
-	private function updateDependant($membership_id, $i)
-	{
-		global $wpdb;
-		$dependant_table = $this->getTable('dependent_list');
-
-		return $wpdb->update(
-			$dependant_table,
-			array(
-				'first_name' => sanitize_text_field($_REQUEST['first_name' . $i]),
-				'last_name' => sanitize_text_field($_REQUEST['last_name' . $i]),
-				'phone' => sanitize_text_field($_REQUEST['phone' . $i]),
-				'mobile' => sanitize_text_field($_REQUEST['mobile' . $i]),
-				'email' => sanitize_text_field($_REQUEST['email' . $i]),
-				'membership_id' => $membership_id,
-				'relationship_id' => $_REQUEST['relationship_id' . $i]
-			),
-			array('id' => $_REQUEST['id' . $i]),
-			array(
-				'%s',
-				'%s',
-				'%s',
-				'%s',
-				'%s',
-				'%d',
-				'%d'
-			)
-		);
-	}
 	/**
 	 * Ajax call from the register member short code to add a new member.
 	 * 
@@ -717,6 +635,13 @@ class Scsmm_Admin
 		if ($this->complete_registration($registration_id, $username, $password, $email, $first_name, $last_name, $membership_number)) {
 			$results['success'] = true;
 			$results['msg'] = 'Registration details successfully added.';
+
+			//check if there is a redirect page and add
+			$options = get_option(PLUGIN_TEXT_DOMAIN);
+			if (isset($options['registration-success-redirect-page'])) {
+				$results['redirect'] = $options['registration-success-redirect-page'];
+			}
+
 			print_r(json_encode($results));
 			die();
 		} else {
@@ -884,6 +809,13 @@ class Scsmm_Admin
 		if ($this->complete_contact_request($email, $first_name, $last_name, $phone, $comments)) {
 			$results['success'] = true;
 			$results['msg'] = 'Contact details successfully added.';
+
+			//check if there is a redirect page and add
+			$options = get_option(PLUGIN_TEXT_DOMAIN);
+			if (isset($options['contact-success-redirect-page'])) {
+				$results['redirect'] = $options['contact-success-redirect-page'];
+			}
+
 			print_r(json_encode($results));
 			die();
 		} else {
@@ -898,14 +830,34 @@ class Scsmm_Admin
 	{
 		$reg_error = new WP_Error;
 
-		//to do
+		$reg_errors = new WP_Error;
+
+		if (empty($email)  || empty($first_name)  || empty($last_name)) {
+			$reg_errors->add('field', 'Required form field is missing');
+		}
+
+
 		return $reg_error;
 	}
 
 	private function complete_contact_request($email, $first_name, $last_name, $phone, $comments)
 	{
-		// to do
-		return true;
+		global $wpdb;
+
+		$contact = array(
+			'first_name' => $first_name,
+			'last_name' => $last_name,
+			'email' => $email,
+			'phone' => $phone,
+			'comments' => $comments
+		);
+
+		$count = $wpdb->insert(
+			$this->getTable('contact_list'),
+			$contact
+		);
+
+		return $count;
 	}
 	// use to save the settings from the settings page
 	public function settings_update()
@@ -921,16 +873,26 @@ class Scsmm_Admin
 	 */
 	public function validate_settings($input)
 	{
-		// to do - this needs work
+		// todo: - this needs work
 		// all inputs
 		$valid = array();
 
 		$valid['email'] = sanitize_email($input['email']);
+		$valid['lifetime'] = sanitize_text_field($input['lifetime']);
+
 		$valid['registration-check-page'] = (isset($input['registration-check-page']) && !empty($input['registration-check-page'])) ? esc_url($input['registration-check-page']) : false;
 		$valid['registration-check-redirect-page'] = (isset($input['registration-check-redirect-page']) && !empty($input['registration-check-redirect-page'])) ? esc_url($input['registration-check-redirect-page']) : false;
 		$valid['registration-expired-redirect-page'] = (isset($input['registration-expired-redirect-page']) && !empty($input['registration-expired-redirect-page'])) ? esc_url($input['registration-expired-redirect-page']) : false;
 		$valid['registration-not-found-redirect-page'] = (isset($input['registration-not-found-redirect-page']) && !empty($input['registration-not-found-redirect-page'])) ? esc_url($input['registration-not-found-redirect-page']) : false;
 		$valid['application-redirect-page'] = (isset($input['application-redirect-page']) && !empty($input['application-redirect-page'])) ? esc_url($input['application-redirect-page']) : false;
+
+		$valid['contact-page'] = (isset($input['contact-page']) && !empty($input['contact-page'])) ? esc_url($input['contact-page']) : false;
+		$valid['contact-success-redirect-page'] = (isset($input['contact-success-redirect-page']) && !empty($input['contact-success-redirect-page'])) ? esc_url($input['contact-success-redirect-page']) : false;
+		$valid['registration-success-redirect-page'] = (isset($input['registration-success-redirect-page']) && !empty($input['registration-success-redirect-page'])) ? esc_url($input['registration-success-redirect-page']) : false;
+		$valid['member-application-notification-email'] = (isset($input['member-application-notification-email']) && !empty($input['member-application-notification-email'])) ? $input['member-application-notification-email'] : false;
+		$valid['member-application-confirmation-email'] = (isset($input['member-application-confirmation-email']) && !empty($input['member-application-confirmation-email'])) ? $input['member-application-confirmation-email'] : false;
+		$valid['member-application-approved-email'] = (isset($input['member-application-approved-email']) && !empty($input['member-application-approved-email'])) ? $input['member-application-approved-email'] : false;
+
 
 		return $valid;
 	}

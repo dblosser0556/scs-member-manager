@@ -86,6 +86,7 @@ class Scsmm
         $this->set_locale();
         $this->define_admin_hooks();
         $this->define_public_hooks();
+        $this->define_common_hooks();
 
     }
 
@@ -124,6 +125,12 @@ class Scsmm
          * The class responsible for defining all actions that occur in the admin area.
          */
         require_once plugin_dir_path(dirname(__FILE__)) . 'admin/class-scsmm-admin.php';
+        
+        /**
+         * The class responsible for defining common filters .
+         */
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-scsmm-common.php';
+
 
         /**
          * The class responsible for defining all actions that occur in the public-facing
@@ -185,6 +192,19 @@ class Scsmm
 
         // Save/update our plugin settings
         $this->loader->add_action('admin_init', $plugin_admin, 'settings_update');
+    }
+
+
+
+    private function define_common_hooks() {
+        $plugin_common = new Scsmm_Common($this->get_plugin_name(), $this->get_version());
+
+
+        $this->loader->add_filter('send_email_with_template', $plugin_common, 'send_email_with_template', 10, 4);
+        $this->loader->add_filter('get_plugin_table', $plugin_common, 'get_plugin_table', 10, 1);
+        $this->loader->add_filter('get_email_templates', $plugin_common, 'get_email_templates', 10, 1);
+        
+
     }
 
     /**
