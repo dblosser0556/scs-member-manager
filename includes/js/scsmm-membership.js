@@ -30,7 +30,7 @@
      */
     $(document).ready(function () {
 
-        var dependents = 0;
+        var dependents = $('#dependent_count').val();
 
         // start here
         // get dependate count
@@ -51,7 +51,11 @@
                 email: {
                     required: true,
                     email: true
-                }
+                },
+                'dep_first_name[]': "required",
+                'dep_last_name[]': "required",
+                'dep_relationship_id[]': "required",
+                'dep_email[]' : 'email'
             },
             messages: {
                 membership_type_id: "PLease select a membership type from the list",
@@ -62,6 +66,10 @@
                 city: "Your city is required.",
                 state: "Your state is required.  Please select.",
                 email: "Please enter a valid email address",
+                'dep_first_name[]': "required",
+                'dep_last_name[]': "required",
+                'dep_relationship_id[]': "required",
+                'dep_email[]' : 'email'
             },
             errorElement: "em",
             errorPlacement: function (error, element) {
@@ -81,19 +89,26 @@
                 $(element).addClass("is-valid").removeClass("is-invalid");
             },
             submitHandler: function (form) {
-                submit(form);
+                save_form(form);
             }
         });
 
 
         $("button#addDependents").click(function () {
             $('#row0').clone().appendTo('#dependantTable tbody');
+            
             dependents++;
+            
             updateDepNo(0, dependents);
+
             $('#row' + dependents).css('display', '');
+            
+            // bind the input masks required for elements added to the dom.
             $('#row' + dependents).find("#dep_phone").inputmask();
             $('#row' + dependents).find("#dep_mobile").inputmask();
             $('#row' + dependents).find("#dep_email").inputmask();
+
+            $('#dependent_count').val(dependents);
 
         });
 
@@ -108,12 +123,14 @@
             }
 
             dependents--;
+
+            $('#dependent_count').val(dependents);
         });
 
     });  //document ready
 
 
-
+   
 
     function updateDepNo(oldRow, newRow) {
         var find_row = 'row' + oldRow;
@@ -140,3 +157,5 @@
     }
 
 })(jQuery);
+
+    

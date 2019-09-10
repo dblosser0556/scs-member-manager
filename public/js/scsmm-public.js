@@ -94,7 +94,7 @@
 				$(element).addClass("is-valid").removeClass("is-invalid");
 			},
 			submitHandler: function (form) {
-				submit(form);
+				save_form(form);
 			}
 		});
 
@@ -131,7 +131,7 @@
 				$(element).addClass("is-valid").removeClass("is-invalid");
 			},
 			submitHandler: function (form) {
-				submit(form);
+				save_form(form);
 			}
 		});
 

@@ -103,8 +103,8 @@ class Scsmm_Admin
 		 */
 
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/scsmm-admin.js', array('jquery'), $this->version, false);
-		wp_enqueue_script( $this->plugin_name . 'membership', PLUGIN_URL . 'includes/js/scsmm-membership.js', array( 'jquery' ), date('h:i:s'), false );
-		wp_enqueue_script( $this->plugin_name . 'common', PLUGIN_URL . 'includes/js/scsmm-common.js', array( 'jquery' ), date('h:i:s'), false );		
+		wp_enqueue_script($this->plugin_name . 'membership', PLUGIN_URL . 'includes/js/scsmm-membership.js', array('jquery'), date('h:i:s'), false);
+		wp_enqueue_script($this->plugin_name . 'common', PLUGIN_URL . 'includes/js/scsmm-common.js', array('jquery'), date('h:i:s'), false);
 
 		// add the bootstrap scripts
 
@@ -463,17 +463,24 @@ class Scsmm_Admin
 		// make sure all of the required fields are sent.
 		if (
 			!isset($_REQUEST['id']) ||
-			!isset($_REQUEST['dependantCount']) ||
+			!isset($_REQUEST['dependent_count']) ||
 			!isset($_REQUEST['first_name']) ||
 			!isset($_REQUEST['last_name']) ||
 			!isset($_REQUEST['email'])
 
 		) return $this->handleError('Missing Data.');
 
-		// sanitize all the fields.
 
+		// find the id and dependent count
 		$id = (int) sanitize_text_field($_REQUEST['id']);
-		$dependantCount = sanitize_text_field($_REQUEST['dependantCount']);
+		$dependent_count = (int) sanitize_text_field($_REQUEST['dependent_count']);
+
+		// create a new_application variable for readability
+		if ($id  === 0) $new_application = true;
+		else $new_application = false;
+
+
+
 
 		$member = array(
 			'first_name' => sanitize_text_field($_REQUEST['first_name']),
@@ -498,7 +505,7 @@ class Scsmm_Admin
 
 		$member_table = $this->getTable('member_list');
 
-		if ($id == 0) {
+		if ($new_application) {
 
 			// insert
 			$count = $wpdb->insert(
@@ -521,7 +528,7 @@ class Scsmm_Admin
 			$membership_id = $id;
 		}
 
-		for ($i = 0; $i < $dependantCount; $i++) {
+		for ($i = 0; $i < $dependent_count; $i++) {
 			$count = $this->insert_or_update_dependant($membership_id, $i);
 			// check for errors	
 			if (!$count) {
@@ -530,32 +537,43 @@ class Scsmm_Admin
 		}
 
 		$options = get_option($this->plugin_name);
-		if (isset($options['member-application-notification-email']) && $options['member-application-notification-email'] != ''  && $id == 0) {
+		if (isset($options['member-application-notification-email']) && $options['member-application-notification-email'] != ''  && $new_application) {
 			// email admin
 			$email_id = $options['member-application-notification-email'];
-			
+
 			$to = $options['email'];
 			if ($to == '') $to = get_option('admin_email');
 
-			$count = apply_filters( 'send_email_with_template', $email_id, $to, $member['email'], $member);
+			$sent = apply_filters('send_email_with_template', $email_id, $to, $member['email'], $member);
 			//public function send_email_with_template($email_id, $to = '', $from = '', $member = '')
 			// email applicant
-			if ($count) $this->handle_error('Something went wrong with sending notification email');
+			if (!$sent) $this->handleError('Something went wrong with sending notification email');
 		}
 
-		if (isset($options['member-application-confirmation-email']) && $options['member-application-confirmation-email'] != ''  && $id == 0) {
-			
+		if (isset($options['member-application-confirmation-email']) && $options['member-application-confirmation-email'] != ''  && $new_application) {
+
 			$email_id = $options['member-application-confirmation-email'];
-			$count = apply_filters( 'send_email_with_template', $email_id, $to='', $from='', $member);
-			if ($count) $this->handle_error('Something went wrong with sending application confirmation email');
+			$sent = apply_filters('send_email_with_template', $email_id, $to = '', $from = '', $member);
+			if (!$sent) $this->handleError('Something went wrong with sending application confirmation email');
+		}
+
+		if (isset($options['application-redirect-page'])  && $options['application-redirect-page'] != '' && $new_application) {
+			$redirect = true;
+		} else {
+			$redirect = false;
 		}
 
 		// todo: use redirect option here.	
 		$results['success'] = true;
+		if ($new_application) {
 			$results['msg'] = 'Application successfully submitted. We will be back shortly.';
-			$results['insert'] = 'insert';
-			print_r(json_encode($results));
-	
+		} else {
+			$results['msg'] = 'Application successfully updated.';
+		}
+
+		if ($redirect)
+			$results['redirect'] = $options['application-redirect-page'];
+		print_r(json_encode($results));
 
 		die();
 	}
@@ -598,6 +616,8 @@ class Scsmm_Admin
 				array('id' => $dependant_id)
 			);
 		}
+
+		return $count;
 	}
 
 	/**
@@ -780,6 +800,12 @@ class Scsmm_Admin
 
 		return true;
 	}
+
+	/**
+	 * ajax call from the contract form to save the contact in the database.
+	 *
+	 * @return void
+	 */
 	public function contact_form()
 	{
 		// check to ensure we know the requester

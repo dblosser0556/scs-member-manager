@@ -162,7 +162,7 @@ class Scsmm_Common
         $sql = "SELECT * FROM {$this->get_plugin_table('email_templates')}";
 
         if ($email_id != 0) {
-            $sql .=  "WHERE id = $email_id";
+            $sql .=  " WHERE id = $email_id";
 
             // get the email template
             $email = $wpdb->get_row(

@@ -16,51 +16,40 @@
             <div class="col-md-4 mb-2">
                 <label for="dep_first_name">First name*</label>
                 <input type="text" class="form-control" data-row="row<?=$i?>" id="dep_first_name" name="dep_first_name[]"
-                    placeholder="First name" value="<?= $i>0 ? $dependents[$i-1]->first_name : ''?>" required <?= $readonly ? 'readonly' : '' ?>/>
-                <!--<div class="invalid-feedback">
-                    Please provide a first name.
-                </div> -->
+                    placeholder="First name" value="<?= $i>0 ? $dependents[$i-1]->first_name : ''?>"  <?= $readonly ? 'readonly' : '' ?>/>
+              
             </div>
             <div class="col-md-4 mb-2">
                 <label for="lastName">Last name*</label>
                 <input type="text" class="form-control" data-row="row<?=$i?>" id="dep_last_name" name="dep_last_name[]"
-                    placeholder="Last name" value="<?=  $i>0 ? $dependents[$i-1]->last_name : ''?>" required <?= $readonly ? 'readonly' : '' ?>>
-                <!-- <div class="invalid-feedback">
-                    Please provide a last name.
-                </div> -->
+                    placeholder="Last name" value="<?=  $i>0 ? $dependents[$i-1]->last_name : ''?>"  <?= $readonly ? 'readonly' : '' ?>>
+               
             </div>
             <div class="col-md-4 mb-2">
                 <label for="dep_relationship_id">Relationship*</label>
                 <select class="form-control" id="dep_relationship_id" data-row="row<?=$i?>" name="dep_relationship_id[]"
-                    placeholder="Last name" required style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
+                    placeholder="Last name"  style="height: calc(2.25rem + 2px); padding: .375rem .75rem;
                      font-size: 1rem; font-weight: 400; line-height: 1.5;" <?= $readonly ? 'readonly' : '' ?> >
                 <?php foreach($relationship_types as $r) { ?>
                     <option value="<?= $r->id ?>" <?= $i>0 ? $dependents[$i-1]->relationship_id == $r->id ? 'selected="selected"' : '' : ''; ?> ><?=$r->name?></option>
                 <?php } ?>
                 </select>
-               <!--  <div class="invalid-feedback">
-                    Please provide a relationship
-                </div> -->
+           
             </div>
         </div>
         <div class="form-row">
             <div class="col-md-4 mb-2">
                 <label for="dep_phone">Phone</label>
                 <input type="tel" class="form-control masked" id="dep_phone" data-row="row<?=$i?>" name="dep_phone[]"
-                    data-inputmask="'mask': '(999) 999-9999'" placeholder="(555) 555-5555"
+                    data-inputmask="'mask': '(999) 999-9999'" placeholder="Phone"
                     value="<?= $i>0 ? $dependents[$i-1]->phone : '' ?>" <?= $readonly ? 'readonly' : '' ?>/>
-                <div class="invalid-feedback">
-                    Please provide a valid phone number.
-                </div>
             </div>
             <div class="col-md-4 mb-2">
                 <label for="dep_mobile">Mobile</label>
                 <input type="tel" class="form-control phone" id="dep_mobile" data-row="row<?=$i?>" name="dep_mobile[]"
-                    data-inputmask="'mask': '(999) 999-9999'" placeholder="(555) 555-5555"
+                    data-inputmask="'mask': '(999) 999-9999'" placeholder="Mobile"
                     value="<?= $i>0 ? $dependents[$i-1]->mobile : '' ?>" <?= $readonly ? 'readonly' : '' ?>/>
-                <div class="invalid-feedback">
-                    Please provide a valid mobile.
-                </div>
+               
             </div>
             <div class="col-md-4 mb-2">
                 <label for="dep_email">Email</label>
@@ -68,9 +57,7 @@
                 data-inputmask="'alias': 'email'"
                     placeholder="Email" value="<?= $i>0 ? $dependents[$i-1]->email : ''?>" <?= $readonly ? 'readonly' : '' ?>/>
                 <small id="emailHelp" class="form-text text-muted">Required for automated registration</small>
-                <div class="invalid-feedback">
-                    Please provide a valid email.
-                </div>
+              
             </div>
         </div>
 
