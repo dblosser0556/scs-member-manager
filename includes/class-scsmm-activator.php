@@ -264,6 +264,7 @@ class Scsmm_Activator
 			last_name varchar(75) NOT NULL,
 			phone varchar(75) NOT NULL,
 			email varchar(255) NOT NULL,
+			contact_date date(25) NOT NULL,
 			comments text NULL,
 			PRIMARY KEY  (id)
 			) $charset_collate;";

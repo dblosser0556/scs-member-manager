@@ -38,6 +38,7 @@ $ajax_nonce = wp_create_nonce("scs-contact-form-check-string");
     <form id="contact_form" method="post" action="">
         <input type="text" hidden name="action" value="contact_form" />
         <input type="text" hidden name="security" value="<?= $ajax_nonce ?>" />
+        <input type="text" hidden name="contact_date" value="<?= date('Y-m-d') ?>" />
         <div class="form-group">
             <label for="first _name">First Name*</label>
             <input type="text" class="form-control" id="first_name" name="first_name" >

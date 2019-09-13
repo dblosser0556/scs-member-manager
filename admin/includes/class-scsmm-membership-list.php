@@ -352,6 +352,7 @@ class Member_List_Table extends SCSWP_List_Table
                 $this->invalid_nonce_redirect();
             } else {
                 $this->page_change_status();
+                $this->graceful_exit();
             }
         }
 
@@ -408,8 +409,7 @@ class Member_List_Table extends SCSWP_List_Table
 
         $page = add_query_arg($query_args, admin_url('admin.php'));
         wp_safe_redirect($page);
-        //$file = PLUGIN_DIR . 'includes/partials/scsmm-membership.php';
-        //include_once($file);
+
     }
 
     public function page_email_members($ids)
@@ -523,7 +523,7 @@ class Member_List_Table extends SCSWP_List_Table
             $member = $this->fetch_member($member_id);
 
             apply_filters( 'send_email_with_template', $id, $to='', $from='', $member );
-            //$this->send_email($id, $member);
+
 
 
         }
@@ -538,7 +538,7 @@ class Member_List_Table extends SCSWP_List_Table
             
             foreach($members as $member){
                 apply_filters( 'send_email_with_template', $id, $to='', $from='', $member);
-                //$this->send_email($id, $member, $check_page_url);
+
             }
         }
         
@@ -557,7 +557,7 @@ class Member_List_Table extends SCSWP_List_Table
         //todo:
     }
 
-    private function send_email($email_id, $member, $check_page_url = '')
+   /*  private function send_email($email_id, $member, $check_page_url = '')
     {
         global $wpdb;
         
@@ -591,7 +591,7 @@ class Member_List_Table extends SCSWP_List_Table
 
         // send the email
         wp_mail($to, $subject, $message, $headers);
-    }
+    } */
 
     /**
      * Parse the email template to replace variables with text from database
@@ -601,7 +601,7 @@ class Member_List_Table extends SCSWP_List_Table
      * @param string $url
      * @return string 
      */
-    private function parse_email_template($email, $member, $url = '')
+ /*    private function parse_email_template($email, $member, $url = '')
     {
 
         // go first through all the keys of the member as they are all allowed values
@@ -621,7 +621,7 @@ class Member_List_Table extends SCSWP_List_Table
         }
         return $content;
     }
-
+ */
     /**
      * Create guid
      *

@@ -66,10 +66,10 @@
                 city: "Your city is required.",
                 state: "Your state is required.  Please select.",
                 email: "Please enter a valid email address",
-                'dep_first_name[]': "required",
-                'dep_last_name[]': "required",
-                'dep_relationship_id[]': "required",
-                'dep_email[]' : 'email'
+                'dep_first_name[]': "Please provide a first name",
+                'dep_last_name[]': "Please provide a last name",
+                'dep_relationship_id[]': "Select a relationship",
+                'dep_email[]' : 'Provide a correct email'
             },
             errorElement: "em",
             errorPlacement: function (error, element) {

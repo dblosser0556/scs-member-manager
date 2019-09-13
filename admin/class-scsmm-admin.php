@@ -90,18 +90,6 @@ class Scsmm_Admin
 	public function enqueue_scripts()
 	{
 
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Scsmm_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Scsmm_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/scsmm-admin.js', array('jquery'), $this->version, false);
 		wp_enqueue_script($this->plugin_name . 'membership', PLUGIN_URL . 'includes/js/scsmm-membership.js', array('jquery'), date('h:i:s'), false);
 		wp_enqueue_script($this->plugin_name . 'common', PLUGIN_URL . 'includes/js/scsmm-common.js', array('jquery'), date('h:i:s'), false);
@@ -125,7 +113,7 @@ class Scsmm_Admin
 
 		//add the count of new application as a menu bubble
 		$new_app_count = $this->get_new_application_count();
-		$page_title = $new_app_count > 0 ? __('Manage Members', 'scsmm') . '<span class="awaiting-mod">' . $new_app_count . '</span>' : __('Manage Members', 'scsmm');
+		$page_title = $new_app_count > 0 ? __('Members', 'scsmm') . '<span class="awaiting-mod">' . $new_app_count . '</span>' : __('Members', 'scsmm');
 
 		//add the main membership menu
 		$page_hook = add_menu_page(
@@ -141,6 +129,23 @@ class Scsmm_Admin
 		add_action('load-' . $page_hook, array($this, 'load_member_list_table_screen_options'));
 
 
+
+		//add the count of new application as a menu bubble
+		// to do   $new_contact_count = $this->get_new_contact_count();
+		$new_contact_count = 1;
+		$page_title = $new_contact_count > 0 ? __('Contacts', 'scsmm') . '<span class="awaiting-mod">' . $new_contact_count . '</span>' : __('Contacts', 'scsmm');
+
+		//add the main membership menu
+		$page_hook = add_submenu_page(
+			$this->plugin_name,
+			'Contact List',
+			$page_title,
+			'manage_options',
+			$this->plugin_name . '-contact-list',
+			array($this, 'load_contact_list_table')
+		);
+		// load the options list - required for wp_list_table to function
+		add_action('load-' . $page_hook, array($this, 'load_contact_list_table_screen_options'));
 
 		// settings
 		$page_hook = add_submenu_page(
@@ -217,6 +222,19 @@ class Scsmm_Admin
 
 		require_once PLUGIN_DIR . 'admin/partials/scsmm-admin-member-list.php';
 	}
+
+	/**
+	 * Call back from the admin menu to load the list of contacts.
+	 *
+	 * @return void
+	 */
+	public function load_contact_list_table()
+	{
+		$this->contact_list_table->prepare_items();
+
+		require_once PLUGIN_DIR . 'admin/partials/scsmm-admin-contact-list.php';
+	}
+
 	/**
 	 * Called from the member_list_table page to load the detailed member application and details form
 	 *
@@ -246,6 +264,25 @@ class Scsmm_Admin
 		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
 		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-membership-list.php';
 		$this->member_list_table = new Member_List_Table($this->plugin_name);
+	}
+
+	/**
+	 * Call back on load of member list table page to set up screen paging options
+	 *
+	 * @return void
+	 */
+	public function load_contact_list_table_screen_options()
+	{
+		$arguments = array(
+			'label' 	=> __('Contacts Per Page', $this->plugin_name),
+			'default'	=> 5,
+			'option' 	=> 'contacts_per_page'
+		);
+
+		add_screen_option('per_page', $arguments);
+		require_once PLUGIN_DIR . 'admin/includes/libraries/class-wp-list-table.php';
+		require_once PLUGIN_DIR . 'admin/includes/class-scsmm-contact-list.php';
+		$this->contact_list_table = new Contact_List_Table($this->plugin_name);
 	}
 	/*
 	 *
@@ -820,8 +857,9 @@ class Scsmm_Admin
 		$first_name =   		sanitize_text_field($_POST['first_name']);
 		$last_name  =   		sanitize_text_field($_POST['last_name']);
 		$comments = 			sanitize_textarea_field($_POST['comments']);
+		$contact_date = 		sanitize_text_field($_POST['contact_date']);
 
-		$reg_errors = $this->comments_validation($email, $first_name, $last_name);
+		$reg_errors = $this->contact_validation($email, $first_name, $last_name);
 
 		if (count($reg_errors->errors) > 0) {
 			$message = "";
@@ -832,7 +870,7 @@ class Scsmm_Admin
 		}
 
 
-		if ($this->complete_contact_request($email, $first_name, $last_name, $phone, $comments)) {
+		if ($this->complete_contact_request($email, $first_name, $last_name, $phone, $comments, $contact_date)) {
 			$results['success'] = true;
 			$results['msg'] = 'Contact details successfully added.';
 
@@ -852,9 +890,8 @@ class Scsmm_Admin
 		}
 	}
 
-	private function comments_validation($email, $first_name, $last_name)
+	private function contact_validation($email, $first_name, $last_name)
 	{
-		$reg_error = new WP_Error;
 
 		$reg_errors = new WP_Error;
 
@@ -863,10 +900,10 @@ class Scsmm_Admin
 		}
 
 
-		return $reg_error;
+		return $reg_errors;
 	}
 
-	private function complete_contact_request($email, $first_name, $last_name, $phone, $comments)
+	private function complete_contact_request($email, $first_name, $last_name, $phone, $comments, $contact_date)
 	{
 		global $wpdb;
 
@@ -875,7 +912,8 @@ class Scsmm_Admin
 			'last_name' => $last_name,
 			'email' => $email,
 			'phone' => $phone,
-			'comments' => $comments
+			'comments' => $comments,
+			'contact_date' => $contact_date
 		);
 
 		$count = $wpdb->insert(

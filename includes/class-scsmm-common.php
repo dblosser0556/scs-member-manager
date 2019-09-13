@@ -174,4 +174,84 @@ class Scsmm_Common
         }
         return $email;
     }
+
+
+    public function save_contact($id = 0)
+    {
+
+
+
+
+        // check to ensure we know the requester
+        if (!check_ajax_referer('scs-contact-form-check-string', 'security')) {
+            $reg_errors = new WP_Error;
+            $reg_errors->add('invalid nonce', 'invalid nonce');
+            return $reg_errors;
+        }
+
+
+        $phone     =                 sanitize_text_field($_POST['phone']);
+        $email      =           sanitize_email($_POST['email']);
+        $first_name =           sanitize_text_field($_POST['first_name']);
+        $last_name  =           sanitize_text_field($_POST['last_name']);
+        $comments =             sanitize_textarea_field($_POST['comments']);
+        $contact_date =         sanitize_text_field($_POST['contact_date']);
+
+        $reg_errors = $this->contact_validation($email, $first_name, $last_name);
+
+        if (count($reg_errors->errors) > 0) {
+            return $reg_errors;
+        }
+
+
+        if ($this->complete_contact_request($id, $email, $first_name, $last_name, $phone, $comments, $contact_date)) {
+            $results['success'] = true;
+            $results['msg'] = 'Contact details successfully added.';
+            return $results;
+           
+        } else {
+            $reg_errors = new WP_Error;
+            $reg_errors->add('error with saving contact', 'Something went wrong. See your administrator.');
+            return $reg_errors;
+        }
+    }
+
+    private function contact_validation($email, $first_name, $last_name)
+    {
+        $reg_errors = new WP_Error;
+
+        if (empty($email)  || empty($first_name)  || empty($last_name)) {
+            $reg_errors->add('field', 'Required form field is missing');
+        }
+
+        return $reg_errors;
+    }
+
+    private function complete_contact_request($id, $email, $first_name, $last_name, $phone, $comments, $contact_date)
+    {
+        global $wpdb;
+
+        $contact = array(
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'email' => $email,
+            'phone' => $phone,
+            'comments' => $comments,
+            'contact_date' => $contact_date
+        );
+        if ($id === 0) {
+            $count = $wpdb->insert(
+                $this->get_plugin_table('contact_list'),
+                $contact
+            );
+        } else {
+            $count = $wpdb->update(
+                $this->get_plugin_table('contact_list'),
+                $contact,
+                array('id' => $id)
+            );
+        }
+
+        return $count;
+    }
 }

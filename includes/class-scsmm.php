@@ -203,6 +203,7 @@ class Scsmm
         $this->loader->add_filter('send_email_with_template', $plugin_common, 'send_email_with_template', 10, 4);
         $this->loader->add_filter('get_plugin_table', $plugin_common, 'get_plugin_table', 10, 1);
         $this->loader->add_filter('get_email_templates', $plugin_common, 'get_email_templates', 10, 1);
+        $this->loader->add_filter('save_contact', $plugin_common, 'save_contact', 10, 1);
         
 
     }
